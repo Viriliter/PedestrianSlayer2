@@ -1,116 +1,123 @@
 #include "math_fun.h"
 
-template<typename T>
-std::vector<double> math_fun::linspace(T start_in, T end_in, int num_in)
+std::vector<float> math_fun::polyfit(const std::vector<float> X, const std::vector<float> Y, int deg)
 {
-    std::vector<double> linspaced;
+    // Declarations...
+    // ----------------------------------
+    enum {maxOrder = 5};
+    
+    double B[maxOrder+1] = {0.0f};
+    double P[((maxOrder+1) * 2)+1] = {0.0f};
+    double A[(maxOrder + 1)*2*(maxOrder + 1)] = {0.0f};
 
-    double start = static_cast<double>(start_in);
-    double end = static_cast<double>(end_in);
-    double num = static_cast<double>(num_in);
+    double x, y, powx;
+    std::vector<float> coefficients(deg+1, 0);
 
-    if (num == 0) { return linspaced; }
-    if (num == 1) 
+    unsigned int ii, jj, kk;
+
+    // Verify initial conditions....
+    // ----------------------------------
+
+    // This method requires that the countOfElements > 
+    // (deg+1) 
+    if (X.size() <= deg)
+        return coefficients;
+
+    // This method has imposed an arbitrary bound of
+    // deg <= maxOrder.  Increase maxOrder if necessary.
+    if (deg > maxOrder)
+        return coefficients;
+
+    // Identify the column vector
+    for (ii = 0; ii < X.size(); ii++)
     {
-        linspaced.push_back(start);
-        return linspaced;
+        x    = X[ii];
+        y    = Y[ii];
+        powx = 1;
+
+        for (jj = 0; jj < (deg + 1); jj++)
+        {
+            B[jj] = B[jj] + (y * powx);
+            powx  = powx * x;
+        }
     }
 
-    double delta = (end - start) / (num - 1);
+    // Initialize the PowX array
+    P[0] = X.size();
 
-    for(int i=0; i < num-1; ++i)
+    // Compute the sum of the Powers of X
+    for (ii = 0; ii < X.size(); ii++)
     {
-        linspaced.push_back(start + delta * i);
+        x    = X[ii];
+        powx = X[ii];
+
+        for (jj = 1; jj < ((2 * (deg + 1)) + 1); jj++)
+        {
+            P[jj] = P[jj] + powx;
+            powx  = powx * x;
+        }
     }
-    linspaced.push_back(end); // I want to ensure that start and end
-                                // are exactly the same as the input
-    return linspaced;
-};
 
-void math_fun::gaussEliminationLS(std::vector<std::vector<float>> a, std::vector<float> &x){
-    int i, j, k;
-    int m = a.size();
-    int n = a[0].size();
+    // Initialize the reduction matrix
+    //
+    for (ii = 0; ii < (deg + 1); ii++)
+    {
+        for (jj = 0; jj < (deg + 1); jj++)
+        {
+            A[(ii * (2 * (deg + 1))) + jj] = P[ii+jj];
+        }
 
-    for(i=0; i<m-1; i++){
-        // Partial Pivoting
-        for(k=i+1;k<m;k++){
-            // If diagonal element(absolute vallue) is smaller than any of the terms below it
-            if(std::fabs(a[i][i])<std::fabs(a[k][i])){
-                // Swap the rows
-                for(j=0;j<n;j++){                
-                    double temp;
-                    temp = a[i][j];
-                    a[i][j] = a[k][j];
-                    a[k][j] = temp;
+        A[(ii*(2 * (deg + 1))) + (ii + (deg + 1))] = 1;
+    }
+
+    // Move the Identity matrix portion of the redux matrix
+    // to the left side (find the inverse of the left side
+    // of the redux matrix
+    for (ii = 0; ii < (deg + 1); ii++)
+    {
+        x = A[(ii * (2 * (deg + 1))) + ii];
+        if (x != 0)
+        {
+            for (kk = 0; kk < (2 * (deg + 1)); kk++)
+            {
+                A[(ii * (2 * (deg + 1))) + kk] = 
+                    A[(ii * (2 * (deg + 1))) + kk] / x;
+            }
+
+            for (jj = 0; jj < (deg + 1); jj++)
+            {
+                if ((jj - ii) != 0)
+                {
+                    y = A[(jj * (2 * (deg + 1))) + ii];
+                    for (kk = 0; kk < (2 * (deg + 1)); kk++)
+                    {
+                        A[(jj * (2 * (deg + 1))) + kk] = 
+                            A[(jj * (2 * (deg + 1))) + kk] -
+                            y * A[(ii * (2 * (deg + 1))) + kk];
+                    }
                 }
             }
         }
-        // Begin Gauss Elimination
-        for(k=i+1;k<m;k++){
-            double  term = a[k][i]/ a[i][i];
-            for(j=0; j<n; j++){
-                a[k][j]=a[k][j]-term*a[i][j];
+        else
+        {
+            // Cannot work with singular matrices
+            return coefficients;
+        }
+    }
+
+    // Calculate and Identify the coefficients
+    for (ii = 0; ii < (deg + 1); ii++)
+    {
+        for (jj = 0; jj < (deg + 1); jj++)
+        {
+            x = 0;
+            for (kk = 0; kk < (deg + 1); kk++)
+            {
+                x = x + (A[(ii * (2 * (deg + 1))) + (kk + (deg + 1))] * B[kk]);
             }
-        }
-        
-    }
-    // Begin Back-substitution
-    for(i=m-1; i>=0; i--){
-        x[i] = a[i][n-1];
-        for(j=i+1; j<n-1; j++){
-            x[i] = x[i]-a[i][j]*x[j];
-        }
-        x[i] = x[i]/a[i][i];
-    }           
-};
-
-void math_fun::printMatrix(std::vector<std::vector<float>> matrix){
-    int i,j;
-    for(i=0;i<matrix.size();i++){
-        for(j=0; j<matrix[0].size(); j++){
-            std::cout << matrix[i][j];
-        }
-        std::cout << std::endl;
-    } 
-};
-
-std::vector<float> math_fun::polyfit(std::vector<float> y, std::vector<float> x, int deg){
-    //y-axis data-points - x-axis data-points - degree of polynomial
-    int N = x.size();  //no. of data-points
-    int i, j;
-    
-    // an array of size 2*n+1 for storing N, Sig xi, Sig xi^2, ...., etc. which are the independent components of the normal matrix
-    double X[2*deg+1];  
-    for(i=0; i<=2*deg; i++){
-        X[i]=0;
-        for(j=0; j<N; j++){
-            X[i] = X[i] + std::pow(x[j], i);
+            coefficients[deg-ii] = x;
         }
     }
 
-    //the normal augmented matrix
-    std::vector<std::vector<float>> B(deg+1, std::vector<float>(deg+2));
-    // rhs
-    float Y[deg+1];      
-    for(i=0; i<=deg; i++){
-        Y[i] = 0;
-        for(j=0; j<N; j++){
-            Y[i] = Y[i] + std::pow(x[j], i)*y[j];
-        }
-    }
-    for(i=0; i<=deg; i++){
-        for(j=0; j<=deg; j++){
-            B[i][j] = X[i+j]; 
-        }
-    }
-    for(i=0; i<=deg; i++){
-        B[i][deg+1] = Y[i];
-    }
-    
-    std::vector<float> A;
-    A.reserve(deg+1);
-    printMatrix(B);
-    gaussEliminationLS(B, A);
-    return A;
-};
+    return coefficients;
+}
