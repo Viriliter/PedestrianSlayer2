@@ -1,5 +1,5 @@
 # Pedestrian Car 2 Project
-This project is a new version of Pedestrian Car Project (https://github.com/Viriliter/PedestrianSlayer). Mainly, OpenCV is used and it is coded in C++ (Previous version of the project was depends on Python language)
+This project is a new version of Pedestrian Car Project (https://github.com/Viriliter/PedestrianSlayer). Mainly, OpenCV is used and it is coded in C++ (Previous version of the project was depended on Python language)
  
 ## Getting Started
 
