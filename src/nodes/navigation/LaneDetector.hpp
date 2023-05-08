@@ -5,6 +5,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "../../utils/math_fun.h"
+#include "../../utils/miscs.h"
 
 using namespace cv;
 
@@ -27,6 +28,9 @@ const float XM_PER_PIX = 3.7/700; // meters per pixel in x dimension
 
 const int N_WINDOWS = 9;  // Number of windows to find each line
 
+const int Y_RANGE = 719;
+
+const int MIN_PIXEL = 50;  // Number of minimum pixel that should be in the each window
 
 
 struct BGR {
@@ -48,16 +52,7 @@ const int LINE_THICKNESS = 5;
 
 const cv::Scalar TEXT_COLOR = cv::Scalar(255, 255, 255);  // White
 
-
-struct Window{
-    std::vector<float> left_fit;
-    std::vector<float> right_fit;
-    float left_curverad;
-    float right_curverad;
-    cv::Mat out_img;
-};
-
-struct Line{
+struct Lane{
 std::vector<float> left_fit;
 std::vector<float> right_fit;
 std::vector<float> left_fit_m;
@@ -72,34 +67,39 @@ cv::Mat nonzeroy;
 class LaneDetector
 {
 private:
-    bool is_test=false;
+    const bool is_test=false;
     cv::VideoCapture capture;
-    int prevErrorCnt;
-    int errorCnt;
-    Line left_line;
-    Line right_line;
-        
-    cv::Mat get_frame();
-    void set_color_correction(cv::Mat frame, cv::Mat &correctedFrame);
-
+     
+    cv::Mat getFrame();
+    void applyCameraCalibration(const cv::Mat &in_frame, cv::Mat &out_frame);
+    void applyColorFilter(const cv::Mat &in_frame, cv::Mat &out_frame);
+    cv::Mat splitColorChannel(const cv::Mat &in_frame, int channel_id);
+    cv::Mat combineColorChannel(const cv::Mat &in_frame);
+    void combineGradients(cv::Mat in_frame, cv::Mat &output);
+    cv::Mat warpFrame(const cv::Mat &in_frame, cv::Mat &out_frame);
     std::pair<std::array<cv::Point, 4>, std::array<cv::Point, 4>>createTrapzoid(cv::Mat frame,
                                                                                     int bottomWidth,
                                                                                     int upperWidth,
                                                                                     int height);
-    void combineGradients(cv::Mat in_frame, cv::Mat &output);
-    cv::Mat warp_frame_perspective(const cv::Mat &in_frame, cv::Mat &out_frame);
-    //Window get_sliding_window(cv::Mat frame, int nbins);
-    //Window get_non_sliding_window(cv::Mat frame, int nbins);
-    Line findLines(const cv::Mat &raw_frame);
-    float calculateCurvature(float yRange, std::vector<float> left_fit_cr);
-    void drawLines(cv::Mat img, Line &line, cv::Mat &out_img);
+    std::pair<cv::Mat, cv::Mat> calculatePerspectiveMatrix(const cv::Mat &in_frame);
+    template<typename T>
+    void calculateHistogram(cv::Mat &in_frame, std::vector<T> &histogram);
+
+    Lane findLaneParameters(const cv::Mat &raw_frame);
+    float calculateCurvature(std::vector<float> left_fit_cr);
+    float calculateVehiclePosition(const cv::Mat &frame, Lane &lane);
+
+    void showFrame(std::string title, const cv::Mat &frame);
+    cv::Mat createHistogramChart(const std::vector<int> &histogram, int height);
+    void drawLines(cv::Mat img, Lane &line, cv::Mat &out_img);
     void visualizeLanes(const cv::Mat &frame, cv::Mat &out_img);
-    void find_lane(cv::Mat frame);
+
+    void findVehiclePosition(cv::Mat frame);
 
 public:
     LaneDetector(bool is_test=false);
 
-    void get_lane_params();
+    void getLaneParams();
 };
 
 #endif  // LANEDETECTOR_HPP

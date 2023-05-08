@@ -41,7 +41,7 @@ std::string type2strr(int type)
     return r;
 }
 
-std::string binary_matrix_check(cv::Mat mat){
+std::string isBinaryMatrix(cv::Mat mat){
     for (int i = 0; i < mat.cols; i++)
     {
         for (int j = 0; j < mat.rows; j++)
@@ -55,7 +55,7 @@ std::string binary_matrix_check(cv::Mat mat){
     return "Binary Matrix";
 }
 
-std::string is_zero_matrix(cv::Mat mat){
+std::string isZeroMatrix(cv::Mat mat){
     for (int i = 0; i < mat.cols; i++)
     {
         for (int j = 0; j < mat.rows; j++)
@@ -70,7 +70,7 @@ std::string is_zero_matrix(cv::Mat mat){
 }
 
 template <typename T>
-void print_vector(std::vector<T> &vec)
+void printVector(std::vector<T> &vec)
 {
     for (auto &value : vec)
     {
@@ -79,116 +79,9 @@ void print_vector(std::vector<T> &vec)
     std::cout << std::endl;
 }
 
-void print_mat(const cv::Mat &matrix)
+void printMat(const cv::Mat &matrix)
 {
     std::cout << cv::format(matrix, Formatter::FMT_PYTHON) << std::endl;
-}
-
-cv::Mat createHistogram(const std::vector<int> &histogram, int height){
-    cv::Mat histogram_chart(cv::Size(histogram.size(), height), CV_8UC1, cv::Scalar(0));
-    int indexx = 0;
-    for (auto &v:histogram){
-        for(int i=0; i<v; i++){
-            if (i>=histogram_chart.rows) break;
-            int val = (histogram_chart.rows-1)-i;
-            uchar &pHist = histogram_chart.ptr<uchar>(val)[indexx];
-            pHist = (int) 255;
-        }
-        indexx++;
-    }
-    return histogram_chart;
-}
-
-LaneDetector::LaneDetector(bool is_test) : is_test(is_test)
-{
-    if (!is_test)
-    {
-        capture = cv::VideoCapture(0);
-        capture.set(3, 360);
-        capture.set(4, 240);
-    }
-    else
-    {
-        capture = cv::VideoCapture("/home/linux/Videos/test-0.mp4");
-    }
-}
-
-cv::Mat LaneDetector::get_frame()
-{
-    cv::Mat frame;
-    capture >> frame;
-    return frame;
-}
-
-/*
-void LaneDetector::set_color_correction(cv::Mat frame, cv::Mat &correctedFrame){
-    cv::Mat HLS;
-    cv::cvtColor(frame, HLS, cv::COLOR_BGR2HLS);
-    cv::Mat channels[3];
-    cv::split(HLS, channels);
-
-    std::vector<cv::Mat> h_channels;
-    h_channels.push_back(channels[2]);
-    h_channels.push_back(channels[2]);
-    h_channels.push_back(channels[2]);
-
-    cv::Mat new_layer;
-    cv::merge(h_channels, new_layer);
-    cv::add(frame, new_layer, correctedFrame);
-}
-*/
-void LaneDetector::set_color_correction(cv::Mat frame, cv::Mat &correctedFrame)
-{
-    // cv::Mat undistorted;
-    cv::Mat undistort;
-    cv::undistort(frame, undistort, CAM_MAT, DIST_MAT, CAM_MAT);
-    cv::cvtColor(undistort, correctedFrame, cv::COLOR_BGR2HLS);
-}
-
-std::pair<std::array<cv::Point, 4>, std::array<cv::Point, 4>> LaneDetector::createTrapzoid(cv::Mat frame,
-                                                                                               int bottomWidth,
-                                                                                               int upperWidth,
-                                                                                               int height)
-{
-    int xbias = 0;
-    int ybias = 30;
-
-    std::array<cv::Point, 4> src;
-    std::array<cv::Point, 4> dst;
-
-    if (bottomWidth > upperWidth)
-    {
-        int maxWidth = bottomWidth;
-    }
-    else
-    {
-        int maxWidth = upperWidth;
-    }
-
-    src = {cv::Point(frame.cols / 2 - bottomWidth / 2, 0),
-           cv::Point(frame.cols / 2 + bottomWidth / 2, 0),
-           cv::Point(frame.cols / 2 + bottomWidth / 2, frame.rows),
-           cv::Point(frame.cols / 2 - bottomWidth / 2, frame.rows)};
-
-    dst = {cv::Point(frame.cols / 2 - upperWidth / 2 + xbias, frame.rows - height + ybias),
-           cv::Point(frame.cols / 2 + upperWidth / 2 + xbias, frame.rows - height + ybias),
-           cv::Point(frame.cols / 2 + bottomWidth / 2 + xbias, frame.rows + ybias),
-           cv::Point(frame.cols / 2 - bottomWidth / 2 + xbias, frame.rows + ybias)};
-    /*
-    cv::Point point0(frame.cols / 2 - upperWidth / 2 + xbias, frame.rows - height + ybias);
-    cv::Point point1(frame.cols / 2 + upperWidth / 2 + xbias, frame.rows - height + ybias);
-    cv::Point point2(frame.cols / 2 + bottomWidth / 2 + xbias, frame.rows + ybias);
-    cv::Point point3(frame.cols / 2 - bottomWidth / 2 + xbias, frame.rows + ybias);
-
-    cv::line(frame, point0, point1, cv::Scalar(255, 255, 255), 2);
-    cv::line(frame, point1, point2, cv::Scalar(255, 255, 255), 2);
-    cv::line(frame, point2, point3, cv::Scalar(255, 255, 255), 2);
-    cv::line(frame, point3, point0, cv::Scalar(255, 255, 255), 2);
-    cv::imshow("Perspective Trapzoid", frame);
-    cv::waitKey(1000);
-    */
-
-    return std::make_pair(src, dst);
 }
 
 cv::Mat threshIt(cv::Mat in_frame, int thresh_min, int thresh_max)
@@ -231,13 +124,61 @@ cv::Mat absSobelThresh(cv::Mat in_frame, char orient, int sobel_kernel, int thre
     cv::Mat sobel;
     cv::Sobel(in_frame, sobel, CV_64F, xorder, yorder, sobel_kernel);
     cv::Mat abs_sobel = cv::abs(sobel);
-
+    
     double min_sobel, max_sobel;
     cv::minMaxLoc(abs_sobel, NULL, &max_sobel, NULL, NULL);
-    cv::Mat scaled = ((255.0 * abs_sobel) / max_sobel);
+    cv::Mat scaled = ((255.0 * abs_sobel) / max_sobel);  
     cv::Mat mScaled;
     scaled.assignTo(mScaled, CV_8U);
+
     return threshIt(mScaled, thresh_min, thresh_max);
+    
+}
+
+LaneDetector::LaneDetector(bool is_test) : is_test(is_test)
+{
+    if (!is_test)
+    {
+        capture = cv::VideoCapture("/home/linux/Videos/test-0.mp4");
+        //capture = cv::VideoCapture(0);
+        //capture.set(3, 360);
+        //capture.set(4, 240);
+    }
+    else
+    {
+        capture = cv::VideoCapture("/home/linux/Videos/test-0.mp4");
+    }
+}
+
+cv::Mat LaneDetector::getFrame()
+{
+    cv::Mat frame;
+    capture >> frame;
+    return frame;
+}
+
+void LaneDetector::applyCameraCalibration(const cv::Mat &in_frame, cv::Mat &out_frame){
+    cv::undistort(in_frame, out_frame, CAM_MAT, DIST_MAT, CAM_MAT);
+}
+
+void LaneDetector::applyColorFilter(const cv::Mat &in_frame, cv::Mat &out_frame){
+    cv::cvtColor(in_frame, out_frame, cv::COLOR_BGR2HLS);
+}
+
+cv::Mat LaneDetector::splitColorChannel(const cv::Mat &in_frame, int channel_id){
+    cv::Mat color_channels[3];
+    cv::split(in_frame, color_channels);
+    return color_channels[channel_id];
+
+}
+
+cv::Mat LaneDetector::combineColorChannel(const cv::Mat &in_frame){
+    cv::Mat out_frame;
+    cv::Mat cloned_frame = in_frame.clone()*255;
+    cv::Mat in[] = {cloned_frame, cloned_frame, cloned_frame};
+    cv::merge(in, 3, out_frame);
+    return out_frame;
+
 }
 
 void LaneDetector::combineGradients(cv::Mat in_frame, cv::Mat &out_frame)
@@ -251,20 +192,72 @@ void LaneDetector::combineGradients(cv::Mat in_frame, cv::Mat &out_frame)
     { return absSobelThresh(corrected_img, 'y', 3, 10, 160); };
 
     cv::Mat sobelX = withSobelX(in_frame);
-    cv::Mat sobelY = withSobelY(in_frame);
+    cv::Mat sobelY = withSobelY(in_frame);   
 
     cv::bitwise_and(sobelX, sobelY, out_frame);
     // output[((sobelX == 1) & (sobelY == 1))] = 1;
 }
 
-cv::Mat LaneDetector::warp_frame_perspective(const cv::Mat &in_frame, cv::Mat &out_frame)
+cv::Mat LaneDetector::warpFrame(const cv::Mat &in_frame, cv::Mat &out_frame)
 {
-    // frame.shape[0]: number of row
-    // frame.shape[1]: number of col
-
     /*
-    // This section needs to run only once to obtain transformation matrix
-    int bottom = frame.cols;
+    std::pair<cv::Mat, cv::Mat> pair_m = calculatePerspectiveMatrix(const cv::Mat &in_frame);
+    */
+
+    cv::Size frame_size{in_frame.cols, in_frame.rows};
+    cv::warpPerspective(in_frame, out_frame, M, frame_size);
+
+    return M;
+}
+
+std::pair<std::array<cv::Point, 4>, std::array<cv::Point, 4>> LaneDetector::createTrapzoid(cv::Mat frame,
+                                                                                               int bottomWidth,
+                                                                                               int upperWidth,
+                                                                                               int height)
+{
+    int xbias = 0;
+    int ybias = 30;
+
+    std::array<cv::Point, 4> src;
+    std::array<cv::Point, 4> dst;
+
+    if (bottomWidth > upperWidth)
+    {
+        int maxWidth = bottomWidth;
+    }
+    else
+    {
+        int maxWidth = upperWidth;
+    }
+
+    src = {cv::Point(frame.cols / 2 - bottomWidth / 2, 0),
+           cv::Point(frame.cols / 2 + bottomWidth / 2, 0),
+           cv::Point(frame.cols / 2 + bottomWidth / 2, frame.rows),
+           cv::Point(frame.cols / 2 - bottomWidth / 2, frame.rows)};
+
+    dst = {cv::Point(frame.cols / 2 - upperWidth / 2 + xbias, frame.rows - height + ybias),
+           cv::Point(frame.cols / 2 + upperWidth / 2 + xbias, frame.rows - height + ybias),
+           cv::Point(frame.cols / 2 + bottomWidth / 2 + xbias, frame.rows + ybias),
+           cv::Point(frame.cols / 2 - bottomWidth / 2 + xbias, frame.rows + ybias)};
+    /*
+    cv::Point point0(frame.cols / 2 - upperWidth / 2 + xbias, frame.rows - height + ybias);
+    cv::Point point1(frame.cols / 2 + upperWidth / 2 + xbias, frame.rows - height + ybias);
+    cv::Point point2(frame.cols / 2 + bottomWidth / 2 + xbias, frame.rows + ybias);
+    cv::Point point3(frame.cols / 2 - bottomWidth / 2 + xbias, frame.rows + ybias);
+
+    cv::lane(frame, point0, point1, cv::Scalar(255, 255, 255), 2);
+    cv::lane(frame, point1, point2, cv::Scalar(255, 255, 255), 2);
+    cv::lane(frame, point2, point3, cv::Scalar(255, 255, 255), 2);
+    cv::lane(frame, point3, point0, cv::Scalar(255, 255, 255), 2);
+    cv::imshow("Perspective Trapzoid", frame);
+    cv::waitKey(1000);
+    */
+
+    return std::make_pair(src, dst);
+}
+
+std::pair<cv::Mat, cv::Mat> LaneDetector::calculatePerspectiveMatrix(const cv::Mat &in_frame){
+    int bottom = in_frame.cols;
     int upper = (int)(in_frame.cols * 0.2);
     int height = (int)(in_frame.rows * 0.4);
 
@@ -288,20 +281,31 @@ cv::Mat LaneDetector::warp_frame_perspective(const cv::Mat &in_frame, cv::Mat &o
     std::cout << "##########################################" << std::endl;
     std::cout << "New Transformation Matrices" << std::endl;
     std::cout << "M:";
-    print_mat(Mnew);
+    printMat(Mnew);
     std::cout << std::endl;
     std::cout << "Minv:";
-    print_mat(Mnew_inv);
+    printMat(Mnew_inv);
     std::cout << std::endl;
     std::cout << "##########################################" << std::endl;
-    */
-    cv::Size frame_size{in_frame.cols, in_frame.rows};
-    cv::warpPerspective(in_frame, out_frame, M, frame_size);
-
-    return M;
+    return std::make_pair(Mnew, Mnew_inv);
 }
 
-Line LaneDetector::findLines(const cv::Mat &raw_frame)
+template<typename T>
+void LaneDetector::calculateHistogram(cv::Mat &in_frame, std::vector<T> &histogram){
+    for (int i = 0; i < in_frame.cols; i++)
+    {
+        int columnSum = 0;
+        // Take a histogram of the bottom half of the image
+        for (int j = in_frame.rows / 2; j < in_frame.rows; j++)
+        {
+            uchar &pFrame = in_frame.ptr<uchar>(j)[i];
+            columnSum += (int) pFrame;
+        }
+        histogram.push_back(columnSum);
+    }
+}
+
+Lane LaneDetector::findLaneParameters(const cv::Mat &raw_frame)
 {
     std::vector<float> left_fit;
     std::vector<float> right_fit;
@@ -314,52 +318,39 @@ Line LaneDetector::findLines(const cv::Mat &raw_frame)
     cv::Mat nonzerox;
     cv::Mat nonzeroy;
 
-    int margin = 110, minpix = 50;
+    int margin = 110;
 
     // Apply HLS color filter
-    cv::Mat corrected_frame;
-    set_color_correction(raw_frame, corrected_frame);
-
+    cv::Mat corrected_frame, filtered_frame;
+    applyCameraCalibration(raw_frame, corrected_frame);
+    applyColorFilter(corrected_frame, filtered_frame);
+  
     // Convert to 1 channel image
-    cv::Mat HLS_channel[3];  // Channel 0: Hue, Channel 1: Limunosity, Channel 2: Saturation 
-    cv::split(corrected_frame, HLS_channel);
-    //cv::imshow("S Channel", HLS_channel[2]);
+    // Channel 0: Hue, Channel 1: Limunosity, Channel 2: Saturation
+    cv::Mat s_channel = splitColorChannel(filtered_frame, 2);
+    //showFrame("S Channel", s_channel);
 
-    // HLS channel 2 is saturation value
-    cv::Mat combined_frame(HLS_channel[2].size(), CV_8U);
-
-    combineGradients(HLS_channel[2], combined_frame);
-    //cv::imshow("Combined Gradient", combined_frame.clone()*255);
+    cv::Mat combined_frame(s_channel.size(), CV_8U);
+    combineGradients(s_channel, combined_frame);
+    //showFrame("Combined Gradient", combined_frame.clone()*255);
 
     // Apply a perspective transform
     cv::Mat frame(combined_frame.size(), CV_8U);
-    warp_frame_perspective(combined_frame, frame);
+    warpFrame(combined_frame, frame);
+    //showFrame("Perspective Frame", frame.clone()*255);
 
-    //cv::imshow("Perspective Frame", frame.clone()*255);
-
-    // Take a histogram of the bottom half of the image
-    // warp_frame_perspective takes care of it
-    
-    std::vector<int> histogram;
-    
     // Convert to 3 channel color space
-    cv::Mat true_frame = frame.clone()*255;
-    cv::Mat in[] = {true_frame, true_frame, true_frame};
-    cv::merge(in, 3, out_img);
-
-    for (int i = 0; i < frame.cols; i++)
-    {
-        int columnSum = 0;
-        for (int j = frame.rows / 2; j < frame.rows; j++)
-        {
-            uchar &pFrame = frame.ptr<uchar>(j)[i];
-            columnSum += (int) pFrame;
-        }
-        histogram.push_back(columnSum);
+    if (is_test){
+        out_img = combineColorChannel(frame);
     }
 
-    cv::Mat histogram_chart = createHistogram(histogram, frame.rows);
-    //imshow("Histogram", histogram_chart);
+    // Calculate histogram of the image
+    std::vector<int> histogram;
+    calculateHistogram<int>(frame, histogram);
+
+    // Create histogram chart to visualize
+    //cv::Mat histogram_chart = createHistogramChart(histogram, frame.rows);
+    //showFrame("Histogram", histogram_chart);
 
     // Find the peak of the left and right halves of the histogram
     // These will be the starting point for the left and right lines
@@ -405,8 +396,10 @@ Line LaneDetector::findLines(const cv::Mat &raw_frame)
         float win_xright_high = rightx_current + (float)margin;
 
         // Draw the windows on the visualization image
-        cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low), cv::Point(win_xleft_high, win_y_high), LEFT_WINDOW_COLOR, 2);
-        cv::rectangle(out_img, cv::Point(win_xright_low, win_y_low), cv::Point(win_xright_high, win_y_high), RIGHT_WINDOW_COLOR, 2);
+        if (is_test){
+            cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low), cv::Point(win_xleft_high, win_y_high), LEFT_WINDOW_COLOR, 2);
+            cv::rectangle(out_img, cv::Point(win_xright_low, win_y_low), cv::Point(win_xright_high, win_y_high), RIGHT_WINDOW_COLOR, 2);
+        }
 
         // Identify the nonzero pixels in x and y within the window
         cv::Mat good_left_inds[2];    // 1d array
@@ -432,8 +425,8 @@ Line LaneDetector::findLines(const cv::Mat &raw_frame)
             right_lane_inds.push_back(good_right_inds[1].at<int>(i, 0));
         }
 
-        // If you found > minpix pixels, recenter next window on their mean position
-        if (good_left_inds[1].rows > minpix)
+        // If you found > MIN_PIXEL pixels, recenter next window on their mean position
+        if (good_left_inds[1].rows > MIN_PIXEL)
         {
             leftx_current = 0;
             for (int i = 0; i < good_left_inds[1].rows; i++)
@@ -442,7 +435,7 @@ Line LaneDetector::findLines(const cv::Mat &raw_frame)
             }
             leftx_current /= good_left_inds[1].rows;
         }
-        if (good_right_inds[1].rows > minpix)
+        if (good_right_inds[1].rows > MIN_PIXEL)
         {
             rightx_current = 0;
             for (int i = 0; i < good_right_inds[1].rows; i++)
@@ -452,7 +445,7 @@ Line LaneDetector::findLines(const cv::Mat &raw_frame)
             rightx_current /= good_right_inds[1].rows;
         }
     }
-    // Extract left and right line pixel positions
+    // Extract left and right lane pixel positions
     std::vector<float> leftx;
     std::vector<float> lefty;
     std::vector<float> rightx;
@@ -488,38 +481,62 @@ Line LaneDetector::findLines(const cv::Mat &raw_frame)
     left_fit_m = math_fun::polyfit(lefty, leftx, 2);
     right_fit_m = math_fun::polyfit(righty, rightx, 2);
 
-    for(int i=0; i<left_lane_inds.size(); i++){
-        int y = nonzeroy.at<int>(left_lane_inds.at(i));
-        int x = nonzerox.at<int>(left_lane_inds.at(i));
-        BGR &color = out_img.ptr<BGR>(y)[x];
-        color = LEFT_LANE_CLUSTER_COLOR;
-    }
-    for(int i=0; i<right_lane_inds.size(); i++){
-        int y = nonzeroy.at<int>(right_lane_inds.at(i));
-        int x = nonzerox.at<int>(right_lane_inds.at(i));
-        BGR &color = out_img.ptr<BGR>(y)[x];
-        color = RIGHT_LANE_CLUSTER_COLOR;
+    if (is_test){
+        for(int i=0; i<left_lane_inds.size(); i++){
+            int y = nonzeroy.at<int>(left_lane_inds.at(i));
+            int x = nonzerox.at<int>(left_lane_inds.at(i));
+            BGR &color = out_img.ptr<BGR>(y)[x];
+            color = LEFT_LANE_CLUSTER_COLOR;
+        }
+        for(int i=0; i<right_lane_inds.size(); i++){
+            int y = nonzeroy.at<int>(right_lane_inds.at(i));
+            int x = nonzerox.at<int>(right_lane_inds.at(i));
+            BGR &color = out_img.ptr<BGR>(y)[x];
+            color = RIGHT_LANE_CLUSTER_COLOR;
+        }
     }
 
-    Line line;
-    line.left_fit = left_fit;
-    line.right_fit = right_fit;
-    line.left_fit_m = left_fit_m;
-    line.right_fit_m = right_fit_m;
-    line.left_lane_inds = left_lane_inds;
-    line.right_lane_inds = right_lane_inds;
-    line.out_img = out_img;
-    line.nonzerox = nonzerox;
-    line.nonzeroy = nonzeroy;
-
-    return line;
+    Lane lane;
+    lane.left_fit = left_fit;
+    lane.right_fit = right_fit;
+    lane.left_fit_m = left_fit_m;
+    lane.right_fit_m = right_fit_m;
+    lane.left_lane_inds = left_lane_inds;
+    lane.right_lane_inds = right_lane_inds;
+    lane.out_img = out_img;
+    lane.nonzerox = nonzerox;
+    lane.nonzeroy = nonzeroy;
+    
+    return lane;
 }
 
-void LaneDetector::drawLines(cv::Mat img, Line &line, cv::Mat &out_img)
+void LaneDetector::showFrame(std::string title, const cv::Mat &frame){
+    if (!is_test) return;
+    cv::imshow(title, frame);
+}
+
+cv::Mat LaneDetector::createHistogramChart(const std::vector<int> &histogram, int height){
+    cv::Mat histogram_chart(cv::Size(histogram.size(), height), CV_8UC1, cv::Scalar(0));
+    int indexx = 0;
+    for (auto &v:histogram){
+        for(int i=0; i<v; i++){
+            if (i>=histogram_chart.rows) break;
+            int val = (histogram_chart.rows-1)-i;
+            uchar &pHist = histogram_chart.ptr<uchar>(val)[indexx];
+            pHist = (int) 255;
+        }
+        indexx++;
+    }
+    return histogram_chart;
+}
+
+void LaneDetector::drawLines(cv::Mat img, Lane &lane, cv::Mat &out_img)
 {
     /*
     Draw the lane lines on the image `img` using the poly `left_fit` and `right_fit`.
     */
+    if (!is_test) return;
+
     int yMax = img.rows;
     std::vector<double> ploty = math_fun::linspace<int>(0, yMax - 1, yMax);
     cv::Mat color_warp(img.size(), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -530,11 +547,11 @@ void LaneDetector::drawLines(cv::Mat img, Line &line, cv::Mat &out_img)
 
     for (auto &val_ploty : ploty)
     {
-        left_fitx.push_back(line.left_fit[0] * std::pow(val_ploty, 2) + line.left_fit[1] * val_ploty + line.left_fit[2]);
-        right_fitx.push_back(line.right_fit[0] * std::pow(val_ploty, 2) + line.right_fit[1] * val_ploty + line.right_fit[2]);
+        left_fitx.push_back(lane.left_fit[0] * std::pow(val_ploty, 2) + lane.left_fit[1] * val_ploty + lane.left_fit[2]);
+        right_fitx.push_back(lane.right_fit[0] * std::pow(val_ploty, 2) + lane.right_fit[1] * val_ploty + lane.right_fit[2]);
     }
 
-    // Recast the x and y points into usable format for cv2.fillPoly()
+    // Recast the x and y points into usable format for polylines
     std::vector<cv::Point> left_pts, right_pts;
 
     for (int i = 0; i < left_fitx.size(); i++)
@@ -548,8 +565,8 @@ void LaneDetector::drawLines(cv::Mat img, Line &line, cv::Mat &out_img)
     }
 
     // Draw the lane onto the warped blank image
-    cv::polylines(color_warp, left_pts, false, LEFT_LINE_COLOR, LINE_THICKNESS);  // orange
-    cv::polylines(color_warp, right_pts, false, RIGHT_LINE_COLOR, LINE_THICKNESS);  // purple
+    cv::polylines(color_warp, left_pts, false, LEFT_LINE_COLOR, LINE_THICKNESS);
+    cv::polylines(color_warp, right_pts, false, RIGHT_LINE_COLOR, LINE_THICKNESS);
 
     // Warp the blank back to original image space using inverse perspective matrix (Minv)
     cv::Mat newWarp;
@@ -557,12 +574,23 @@ void LaneDetector::drawLines(cv::Mat img, Line &line, cv::Mat &out_img)
     cv::addWeighted(img, 1, newWarp, 1, 0, out_img);
 }
 
-float LaneDetector::calculateCurvature(float yRange, std::vector<float> left_fit_cr)
+float LaneDetector::calculateCurvature(std::vector<float> left_fit_cr)
 {
     /*
     Returns the curvature of the polynomial `fit` on the y range `yRange`.
     */
-    return (std::pow(1 + std::pow(2 * left_fit_cr[0] * yRange * YM_PER_PIX + left_fit_cr[1], 2), 1.5)) / std::abs(2 * left_fit_cr[0]);
+    return (std::pow(1 + std::pow(2 * left_fit_cr[0] * Y_RANGE * YM_PER_PIX + left_fit_cr[1], 2), 1.5)) / std::abs(2 * left_fit_cr[0]);
+}
+
+float LaneDetector::calculateVehiclePosition(const cv::Mat &frame, Lane &lane){
+    float xMax = frame.cols * XM_PER_PIX;
+    float yMax = frame.rows * YM_PER_PIX;
+
+    float vehicleCenter = xMax / (float)2;
+    float lineLeft = lane.left_fit_m[0] * std::pow(yMax, 2) + lane.left_fit_m[1] * yMax + lane.left_fit_m[2];
+    float lineRight = lane.right_fit_m[0] * std::pow(yMax, 2) + lane.right_fit_m[1] * yMax + lane.right_fit_m[2];
+    float lineMiddle = lineLeft + (lineRight - lineLeft) / 2;
+    return lineMiddle - vehicleCenter;  //  diffFromVehicle
 }
 
 void LaneDetector::visualizeLanes(const cv::Mat &frame, cv::Mat &out_img)
@@ -571,76 +599,64 @@ void LaneDetector::visualizeLanes(const cv::Mat &frame, cv::Mat &out_img)
     Visualize the windows and fitted lines for `image`.
     Returns (`left_fit` and `right_fit`)
     */
-    try
-    {
-        Line line = findLines(frame);
-        //cv::imshow("Windows on Frame", line.out_img);
 
-        drawLines(frame, line, out_img);
-        //cv::imshow("Lines on Frame", out_img);
+    if (!is_test) return;
 
+    Lane lane = findLaneParameters(frame);
+    //showFrame("Windows on Line", lane.out_img);
 
-        int yRange = 719;
-        float leftCurvature = calculateCurvature(yRange, line.left_fit_m);
-        float rightCurvature = calculateCurvature(yRange, line.right_fit_m);
+    drawLines(frame, lane, out_img);
+    //showFrame("Lines on Lane", lane.out_img);
 
-        float xMax = frame.cols * XM_PER_PIX;
-        float yMax = frame.rows * YM_PER_PIX;
+    float leftCurvature = calculateCurvature(lane.left_fit_m);
+    float rightCurvature = calculateCurvature(lane.right_fit_m);
+    float diffFromVehicle = calculateVehiclePosition(frame, lane);
 
-        float vehicleCenter = xMax / (float)2;
-        float lineLeft = line.left_fit_m[0] * std::pow(yMax, 2) + line.left_fit_m[1] * yMax + line.left_fit_m[2];
-        float lineRight = line.right_fit_m[0] * std::pow(yMax, 2) + line.right_fit_m[1] * yMax + line.right_fit_m[2];
-        float lineMiddle = lineLeft + (lineRight - lineLeft) / 2;
-        float diffFromVehicle = lineMiddle - vehicleCenter;
+    std::string message;
+    if (diffFromVehicle > 0)
+        message = std::to_string(diffFromVehicle) + " m right";
+    else
+        message = std::to_string(-diffFromVehicle) + " m left";
 
-        std::string message;
-        if (diffFromVehicle > 0)
-            message = std::to_string(diffFromVehicle) + " m right";
-        else
-            message = std::to_string(-diffFromVehicle) + " m left";
+    // Draw info
+    int fontScale = 1;
+    std::string text1, text2, text3;
+    text1 = "Left curvature: " + std::to_string(leftCurvature) + " m";
+    text2 = "Right curvature: " + std::to_string(rightCurvature) + " m";
+    text3 = "Vehicle is " + message + " of center";
 
-        // Draw info
-        int fontScale = 1;
-        std::string text1, text2, text3;
-        text1 = "Left curvature: " + std::to_string(leftCurvature) + " m";
-        text2 = "Right curvature: " + std::to_string(rightCurvature) + " m";
-        text3 = "Vehicle is " + message + " of center";
-
-        cv::putText(out_img, text1, cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, fontScale, TEXT_COLOR, 2);
-        cv::putText(out_img, text2, cv::Point(50, 120), cv::FONT_HERSHEY_SIMPLEX, fontScale, TEXT_COLOR, 2);
-        cv::putText(out_img, text3, cv::Point(50, 190), cv::FONT_HERSHEY_SIMPLEX, fontScale, TEXT_COLOR, 2);
-    }
-    catch (cv::Exception &ex)
-    {
-        std::cout << ex.msg << " : " << ex.what() << std::endl;
-    }
+    cv::putText(out_img, text1, cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, fontScale, TEXT_COLOR, 2);
+    cv::putText(out_img, text2, cv::Point(50, 120), cv::FONT_HERSHEY_SIMPLEX, fontScale, TEXT_COLOR, 2);
+    cv::putText(out_img, text3, cv::Point(50, 190), cv::FONT_HERSHEY_SIMPLEX, fontScale, TEXT_COLOR, 2);
 }
 
-void LaneDetector::find_lane(cv::Mat frame)
+void LaneDetector::findVehiclePosition(cv::Mat frame)
 {
-    Line line = findLines(frame);
-
-    float yRange = 719;
-    float leftCurvature, rightCurvature;
-    leftCurvature = calculateCurvature(yRange, line.left_fit_m) / 1000;
-    rightCurvature = calculateCurvature(yRange, line.right_fit_m) / 1000;
+    Lane lane = findLaneParameters(frame);
+    float diffFromVehicle = calculateVehiclePosition(frame, lane);    
 }
 
-void LaneDetector::get_lane_params()
+void LaneDetector::getLaneParams()
 {
-    cv::Mat frame = get_frame();
-    cv::imshow("Original", frame);
+    cv::Mat frame = getFrame();
+
+    //miscs::Time time1 = miscs::pickTime();
+    //findVehiclePosition(frame);
+    //miscs::Time time2 = miscs::pickTime();
+    //miscs::showElapsedTime(time1, time2, (int) miscs::timeFormat::formatMiliseconds);
     
+    cv::imshow("Original", frame);
     cv::Mat visualized_frame = frame;
     visualizeLanes(frame, visualized_frame);
     cv::imshow("Visualized Frame", visualized_frame);
-
     cv::waitKey(1);
+    
 }
+
 /*
-void LaneDetector::get_lane_params()
+void LaneDetector::getLaneParams()
 {
-    // cv::Mat frame = get_frame();
+    // cv::Mat frame = getFrame();
     std::vector<std::string> imgs_path;
     imgs_path.push_back("/home/linux/Pictures/test_images/test6.jpg");
     imgs_path.push_back("/home/linux/Pictures/test_images/straight_lines1.jpg");

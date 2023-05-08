@@ -19,7 +19,7 @@ int main(){
     signal(SIGINT, signal_callback_handler);
 
     while (1){
-        ld.get_lane_params();
+        ld.getLaneParams();
     }
 
     return EXIT_SUCCESS;

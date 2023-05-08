@@ -12,7 +12,8 @@ add_executable(PedestrianSlayer2
                src/nodes/navigation/LaneDetector.hpp
                src/nodes/navigation/LaneDetector.cpp
                src/utils/math_fun.h
-               src/utils/math_fun.cpp)
+               src/utils/math_fun.cpp
+               src/utils/miscs.h)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
