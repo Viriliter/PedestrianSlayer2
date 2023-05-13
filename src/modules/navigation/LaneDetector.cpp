@@ -643,7 +643,7 @@ void LaneDetector::getLaneParams()
     //miscs::Time time1 = miscs::pickTime();
     //findVehiclePosition(frame);
     //miscs::Time time2 = miscs::pickTime();
-    //miscs::showElapsedTime(time1, time2, (int) miscs::timeFormat::formatMiliseconds);
+    //miscs::showElapsedTime(time1, time2, (int) timing::timeFormat::formatMiliseconds);
     
     cv::imshow("Original", frame);
     cv::Mat visualized_frame = frame;

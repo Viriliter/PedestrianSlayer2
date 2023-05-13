@@ -1,0 +1,149 @@
+#include "SlaveCommunicationTask.hpp"
+#include "../utils/timing.h"
+
+using namespace LibSerial;
+using namespace tasks;
+
+SlaveCommunicationTask::SlaveCommunicationTask()
+{
+    switch (SLAVE_BAUD)
+    {
+    case (9600):
+        baudrate = BaudRate::BAUD_9600;
+        break;
+    case (115200):
+        baudrate = BaudRate::BAUD_115200;
+        break;
+    case (230400):
+        baudrate = BaudRate::BAUD_230400;
+        break;
+    default:
+        baudrate = BaudRate::BAUD_9600;
+        break;
+    }
+    connectPort();
+    serialPort->SetBaudRate(baudrate);
+};
+
+SlaveCommunicationTask::~SlaveCommunicationTask()
+{
+    std::cout << "Destructor of SlaveCommunicationTask" << std::endl;
+    disconnectPort();
+    delete serialPort;
+};
+
+bool SlaveCommunicationTask::connectPort()
+{
+    if (serialPort == NULL)
+        return false;
+    serialPort->Open(portName);
+    return isConnected;
+};
+
+void SlaveCommunicationTask::disconnectPort()
+{
+    if (serialPort == NULL)
+        return;
+
+    if (serialPort->IsOpen())
+        serialPort->Close();
+};
+
+void SlaveCommunicationTask::setPortName(std::string _portName)
+{
+    std::string portName = _portName;
+};
+
+void SlaveCommunicationTask::setBaudrate(BaudRate _baudrate)
+{
+    BaudRate baudrate = _baudrate;
+};
+
+std::pair<communication::messages::LinkedBytes<uint8_t>, communication::messages::MessagePacket> 
+SlaveCommunicationTask::parseIncommingBytes(communication::messages::LinkedBytes<uint8_t> &rx_bytes, int byte_count)
+{
+    //Parses message according to predefined message structure. Message structure can be found in ../doc path
+    communication::messages::MessagePacket packet;
+    communication::messages::LinkedBytes<uint8_t> remaining;
+    if (rx_bytes.Count() > 3){  // Check header
+        if (rx_bytes[0] == 0xAA)
+        { // Check SoM
+            uint8_t msgSize = rx_bytes[1];
+            if (msgSize <= rx_bytes.Count()){
+                packet.SOM = rx_bytes[0];
+                packet.MsgSize = msgSize;
+                packet.MsgID = rx_bytes[2];
+                packet.Checksum = rx_bytes[msgSize-1];
+                // Fill payload
+                for (int i = 3; i < packet.MsgSize-1; i++)
+                {
+                    packet.MessagePayload.add(rx_bytes[i]);
+                }
+                // Fill remaining bytes (Store excessive bytes for next parsing)
+                for (int i = packet.MsgSize; i < rx_bytes.Count(); i++)
+                {
+                    remaining.add(rx_bytes[i]);
+                }
+                return std::make_pair(remaining, packet);
+            }
+            else{
+                // Fill remaining bytes (Store bytes for other parse)
+                for (int i = 0; i < rx_bytes.Count(); i++)
+                {
+                    remaining.add(rx_bytes[i]);
+                }
+                return std::make_pair(remaining, packet);
+            }
+        }
+        else{
+            // Fill remaining bytes (Omit first byte since it is not SoM)
+            for (int i = 1; i < rx_bytes.Count(); i++)
+            {
+                remaining.add(rx_bytes[i]);
+            }
+            return std::make_pair(remaining, packet);
+        }
+    }
+    else{  // Fill remaining bytes
+        for (int i = 0; i < byte_count; i++)
+        {
+            remaining.add(rx_bytes[i]);
+        }
+        return std::make_pair(remaining, packet);
+    }
+};
+
+void SlaveCommunicationTask::run()
+{
+    std::cout << "SlaveCommunicationTask running..." << std::endl;
+    communication::messages::LinkedBytes<uint8_t> rx_remaining;
+    while (true)
+    {
+        if (serialPort->IsOpen())
+        {
+            communication::messages::LinkedBytes<uint8_t> rx_buffer;
+            //char rx_buffer[255];
+            try
+            {
+                int available_byte_count = serialPort->GetNumberOfBytesAvailable();
+                for (int i = 0; i < available_byte_count; i++)
+                {
+                    char rx_byte;
+                    serialPort->ReadByte(rx_byte, timeoutSlave);
+                    rx_buffer.add((uint8_t) rx_byte);
+                }
+                auto pair = parseIncommingBytes(rx_buffer, available_byte_count);
+                rx_remaining += pair.first;
+
+                if (pair.second.MsgSize>0){
+                    std::cout << pair.second.toString() << std::endl;
+                }
+            }
+            catch (ReadTimeout &err)
+            {
+                err.what();
+            }
+            timing::sleep(100, timing::timeFormat::formatMiliseconds);
+        }
+    }
+};

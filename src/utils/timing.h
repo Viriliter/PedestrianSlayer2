@@ -1,11 +1,12 @@
-#ifndef MISCS_H
-#define MISCS_H
+#ifndef TIMING_H
+#define TIMING_H
 
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <thread>
 
-namespace miscs{
+namespace timing{
     
     typedef std::chrono::steady_clock::time_point Time;
     typedef std::chrono::seconds Seconds;
@@ -47,6 +48,22 @@ namespace miscs{
        }
     };
     
+    inline void sleep(long long duration, int format){
+        // Sleeps current thread in predefined duration with appropriate time format
+        switch(format){
+        case(timeFormat::formatSeconds): 
+            std::this_thread::sleep_for(std::chrono::seconds(duration));
+            break;
+        case(timeFormat::formatMiliseconds):
+            std::this_thread::sleep_for(std::chrono::milliseconds(duration));
+            break;
+        case(timeFormat::formatMicroseconds):
+            std::this_thread::sleep_for(std::chrono::microseconds(duration));
+            break;
+        case(timeFormat::formatNanoseconds):
+            std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
+            break;
+        }
+    };
 }
-
-#endif  // MISCS_H
+#endif  // TIMING_H
