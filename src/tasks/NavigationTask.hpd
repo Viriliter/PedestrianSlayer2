@@ -1,0 +1,19 @@
+#ifndef NAVIGATIONTASK_HPP
+#define NAVIGATIONTASK_HPP
+
+#include "Task.hpp"
+
+namespace tasks{
+    class NavigationTask: public Task<cactus_rt::schedulers::Other>{
+        public:
+            NavigationTask();
+
+            void run() override{
+                std::cout << "NavigationTask running..." << std::endl;
+            };
+
+    };
+}
+
+
+#endif  //NAVIGATIONTASK_HPP

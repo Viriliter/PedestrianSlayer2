@@ -26,7 +26,9 @@ list (REMOVE_DUPLICATES PedestrianSlayer2_INCLUDE_DIRS)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 add_compile_options(-pthread)
 
+#SET(CMAKE_CXX_STANDARD 17)
 add_executable(PedestrianSlayer2 ${PedestrianSlayer2_SOURCES})
+
 target_include_directories(PedestrianSlayer2 PRIVATE ${PedestrianSlayer2_INCLUDE_DIRS})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

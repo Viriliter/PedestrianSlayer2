@@ -1,15 +1,19 @@
 #ifndef SLAVECOMMUNICATIONTASK_HPP
 #define SLAVECOMMUNICATIONTASK_HPP
 
-#include  <string>
+#include <string>
 #include <libserial/SerialPort.h>
 #include <libserial/SerialStream.h>
 
 #include "../config.hpp"
 #include "Task.hpp"
 #include "../modules/communication/messages/Message.hpp"
+#include "../utils/container.h"
 
-using namespace LibSerial ;
+//#include "../utils/cactus_rt/schedulers/other.h"
+
+//using namespace cactus_rt;
+using namespace LibSerial;
 
 namespace tasks{
     class SlaveCommunicationTask: public Task{
@@ -21,24 +25,23 @@ namespace tasks{
             bool isConnected;
             int timeoutSlave = SLAVE_CON_TIMEOUT;
 
+            container::LinkedList<uint8_t> rx_remaining;
 
         public:
-            SlaveCommunicationTask();
-            SlaveCommunicationTask(int taskID): Task(taskID){};
-            SlaveCommunicationTask(int taskID, int taskPeriod): Task(taskID, taskPeriod){};
-            SlaveCommunicationTask(int taskID, int taskPeriod, PRIORITY taskPriority, int estimatedTaskDuration, bool rtEnabled, bool cpuAffinityEnabled): 
-            Task(taskID, taskPeriod, taskPriority, estimatedTaskDuration, rtEnabled, cpuAffinityEnabled){};
-
+            SlaveCommunicationTask(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=0, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity={});
             ~SlaveCommunicationTask();
 
             bool connectPort();
             void disconnectPort();
             void setPortName(std::string _portName);
             void setBaudrate(BaudRate _baudrate);
-            std::pair<communication::messages::LinkedBytes<uint8_t>, communication::messages::MessagePacket> 
-            parseIncommingBytes(communication::messages::LinkedBytes<uint8_t> &rx_bytes, int byte_count);
-
-            void run();
+            std::pair<container::LinkedList<uint8_t>, communication::messages::MessagePacket> 
+            parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count);
+        
+        protected:
+            void beforeTask() override;  // overwrite
+            void runTask() override;  // overwrite
+            
     };
 }
 

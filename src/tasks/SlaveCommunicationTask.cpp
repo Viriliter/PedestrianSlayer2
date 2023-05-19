@@ -1,11 +1,12 @@
 #include "SlaveCommunicationTask.hpp"
 #include "../utils/timing.h"
+#include "../utils/container.h"
 
 using namespace LibSerial;
 using namespace tasks;
 
-SlaveCommunicationTask::SlaveCommunicationTask()
-{
+SlaveCommunicationTask::SlaveCommunicationTask(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns, int64_t runtime_ns, int64_t deadline_ns, std::vector<size_t> cpu_affinity)
+: Task(policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
     switch (SLAVE_BAUD)
     {
     case (9600):
@@ -20,7 +21,7 @@ SlaveCommunicationTask::SlaveCommunicationTask()
     default:
         baudrate = BaudRate::BAUD_9600;
         break;
-    }
+    };
     connectPort();
     serialPort->SetBaudRate(baudrate);
 };
@@ -28,8 +29,12 @@ SlaveCommunicationTask::SlaveCommunicationTask()
 SlaveCommunicationTask::~SlaveCommunicationTask()
 {
     std::cout << "Destructor of SlaveCommunicationTask" << std::endl;
+    terminateTask();
+    std::cout << "Task termination called" << std::endl;
     disconnectPort();
+    std::cout << "Port disconnected" << std::endl;
     delete serialPort;
+    std::cout << "Port deleted" << std::endl;
 };
 
 bool SlaveCommunicationTask::connectPort()
@@ -59,12 +64,12 @@ void SlaveCommunicationTask::setBaudrate(BaudRate _baudrate)
     BaudRate baudrate = _baudrate;
 };
 
-std::pair<communication::messages::LinkedBytes<uint8_t>, communication::messages::MessagePacket> 
-SlaveCommunicationTask::parseIncommingBytes(communication::messages::LinkedBytes<uint8_t> &rx_bytes, int byte_count)
+std::pair<container::LinkedList<uint8_t>, communication::messages::MessagePacket> 
+SlaveCommunicationTask::parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count)
 {
     //Parses message according to predefined message structure. Message structure can be found in ../doc path
     communication::messages::MessagePacket packet;
-    communication::messages::LinkedBytes<uint8_t> remaining;
+    container::LinkedList<uint8_t> remaining;
     if (rx_bytes.Count() > 3){  // Check header
         if (rx_bytes[0] == 0xAA)
         { // Check SoM
@@ -113,37 +118,37 @@ SlaveCommunicationTask::parseIncommingBytes(communication::messages::LinkedBytes
     }
 };
 
-void SlaveCommunicationTask::run()
-{
-    std::cout << "SlaveCommunicationTask running..." << std::endl;
-    communication::messages::LinkedBytes<uint8_t> rx_remaining;
-    while (true)
-    {
-        if (serialPort->IsOpen())
-        {
-            communication::messages::LinkedBytes<uint8_t> rx_buffer;
-            //char rx_buffer[255];
-            try
-            {
-                int available_byte_count = serialPort->GetNumberOfBytesAvailable();
-                for (int i = 0; i < available_byte_count; i++)
-                {
-                    char rx_byte;
-                    serialPort->ReadByte(rx_byte, timeoutSlave);
-                    rx_buffer.add((uint8_t) rx_byte);
-                }
-                auto pair = parseIncommingBytes(rx_buffer, available_byte_count);
-                rx_remaining += pair.first;
+void SlaveCommunicationTask::beforeTask(){
+    SPDLOG_INFO("SlaveCommunicationTask has just started.");
+};
 
-                if (pair.second.MsgSize>0){
-                    std::cout << pair.second.toString() << std::endl;
-                }
-            }
-            catch (ReadTimeout &err)
+void SlaveCommunicationTask::runTask(){
+    if (serialPort->IsOpen())
+    {
+        container::LinkedList<uint8_t> rx_buffer;
+        try
+        {
+            int available_byte_count = serialPort->GetNumberOfBytesAvailable();
+            for (int i = 0; i < available_byte_count; i++)
             {
-                err.what();
+                char rx_byte;
+                serialPort->ReadByte(rx_byte, timeoutSlave);
+                rx_buffer.add((uint8_t) rx_byte);
             }
-            timing::sleep(100, timing::timeFormat::formatMiliseconds);
+            auto pair = parseIncommingBytes(rx_buffer, available_byte_count);
+            rx_remaining += pair.first;
+
+            if (pair.second.MsgSize>0){
+                SPDLOG_INFO(pair.second.toString());
+            }
         }
+        catch (ReadTimeout &err)
+        {
+            err.what();
+        }
+        //timing::sleep(100, timing::timeFormat::formatMiliseconds);
+    }
+    else{
+        terminateTask();
     }
 };

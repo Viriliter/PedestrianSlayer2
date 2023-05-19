@@ -4,16 +4,16 @@
 
 #include <opencv2/opencv.hpp> 
 #include "spdlog/spdlog.h"
-//#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
-//#include "spdlog/fmt/ostr.h" // support for user defined types
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
 
-#include "tasks/RTScheduler.hpp"
+#include "tasks/TaskScheduler.hpp"
 #include "modules/navigation/LaneDetector.hpp"
 
-tasks::RTScheduler *scheduler = new tasks::RTScheduler();
+tasks::TaskScheduler *scheduler = new tasks::TaskScheduler();
 
 void signal_callback_handler(int signum){
-    std::cout << "Exiting..." << std::endl;
+    SPDLOG_INFO("Exiting application...");
     //scheduler = NULL;
     delete scheduler;
     exit(signum);
@@ -21,11 +21,10 @@ void signal_callback_handler(int signum){
 
 int main(){
     signal(SIGINT, signal_callback_handler);
-    SPDLOG_DEBUG("Starting application");
+    int heap_size_ = 5;
+    SPDLOG_INFO("Starting application...");
 
     //spdlog::info("Welcome to spdlog version {}.{}.{}  !", SPDLOG_VER_MAJOR, SPDLOG_VER_MINOR, SPDLOG_VER_PATCH);
-    std::cout << "Starting..." << std::endl;
-
     scheduler->startScheduler();
 
     /*

@@ -48,6 +48,7 @@ namespace timing{
        }
     };
     
+    // Do not use this function inside task operations. Task::sleep is appropriate way.
     inline void sleep(long long duration, int format){
         // Sleeps current thread in predefined duration with appropriate time format
         switch(format){
@@ -64,6 +65,46 @@ namespace timing{
             std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
             break;
         }
+    };
+
+    inline int64_t NowNs() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000000000 + ts.tv_nsec;
+    }
+
+    inline int64_t WallNowNs() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return ts.tv_sec * 1000000000 + ts.tv_nsec;
+    }
+
+    inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
+    ts.tv_nsec += ns;
+
+    while (ts.tv_nsec >= 1000000000) {
+        ++ts.tv_sec;
+        ts.tv_nsec -= 1000000000;
+    }
+
+    while (ts.tv_nsec < 0) {
+        --ts.tv_sec;
+        ts.tv_nsec += 1000000000;
+    }
+
+    return ts;
+    }
+
+    inline static int64_t secondsToNanoseconds(int64_t seconds){
+        return seconds * 1000000000;
+    };
+    
+    inline static int64_t milisecondsToNanoseconds(int64_t miliseconds){
+        return miliseconds * 1000000;
+    };
+
+    inline static int64_t microsecondsToNanoseconds(int64_t microseconds){
+        return microseconds * 1000;
     };
 }
 #endif  // TIMING_H
