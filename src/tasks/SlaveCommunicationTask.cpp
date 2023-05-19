@@ -1,12 +1,14 @@
 #include "SlaveCommunicationTask.hpp"
+
+#include <string>
 #include "../utils/timing.h"
 #include "../utils/container.h"
 
 using namespace LibSerial;
 using namespace tasks;
 
-SlaveCommunicationTask::SlaveCommunicationTask(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns, int64_t runtime_ns, int64_t deadline_ns, std::vector<size_t> cpu_affinity)
-: Task(policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
+SlaveCommunicationTask::SlaveCommunicationTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns, int64_t runtime_ns, int64_t deadline_ns, std::vector<size_t> cpu_affinity)
+: Task(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
     switch (SLAVE_BAUD)
     {
     case (9600):
@@ -22,6 +24,18 @@ SlaveCommunicationTask::SlaveCommunicationTask(SCHEDULE_POLICY policy, TASK_PRIO
         baudrate = BaudRate::BAUD_9600;
         break;
     };
+    
+
+    mq_attr msg_attr;
+
+    msg_attr.mq_flags = 0;
+    msg_attr.mq_maxmsg = 10;
+    msg_attr.mq_msgsize = 8192;
+    msg_attr.mq_curmsgs = 0;
+    
+    std::cout << "createMsgQueue? " << std::endl;
+    std::cout << createMsgQueue("/SlaveCommunicationTask", msg_attr) << std::endl;
+
     connectPort();
     serialPort->SetBaudRate(baudrate);
 };
@@ -140,6 +154,10 @@ void SlaveCommunicationTask::runTask(){
 
             if (pair.second.MsgSize>0){
                 SPDLOG_INFO(pair.second.toString());
+                char *buf = pair.second.toChar();
+
+                SPDLOG_INFO(writeMsgQueue("/SlaveCommunicationTask", buf, pair.second.MsgSize));
+                delete buf;
             }
         }
         catch (ReadTimeout &err)

@@ -27,12 +27,7 @@ namespace container{
             ~LinkedList(){
                 if (head==NULL) return;
 
-                Node<T> *ptr = head;
-                while(ptr != NULL){
-                    Node<T> *temp = ptr;
-                    ptr = ptr->prev;
-                    delete temp;
-                }
+                clear();
             };
 
             LinkedList(const LinkedList &srcLinkedBytes){
@@ -159,6 +154,7 @@ namespace container{
                 tail->prev = newNode;
                 newNode->next = tail;
                 tail = newNode;
+                count ++;
             };
 
             T pop(){
@@ -261,6 +257,9 @@ namespace container{
                     delete temp;
                 }
                 count = 0;
+                
+                head == NULL;
+                tail == NULL;
             }
 
             std::string toString(){

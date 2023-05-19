@@ -28,7 +28,7 @@ namespace tasks{
             container::LinkedList<uint8_t> rx_remaining;
 
         public:
-            SlaveCommunicationTask(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=0, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity={});
+            SlaveCommunicationTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=0, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity={});
             ~SlaveCommunicationTask();
 
             bool connectPort();

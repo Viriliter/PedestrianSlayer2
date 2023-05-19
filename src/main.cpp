@@ -16,6 +16,8 @@ void signal_callback_handler(int signum){
     SPDLOG_INFO("Exiting application...");
     //scheduler = NULL;
     delete scheduler;
+    SPDLOG_INFO("Exitted.");
+    
     exit(signum);
 }
 

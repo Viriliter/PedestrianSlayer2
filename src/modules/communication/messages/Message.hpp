@@ -53,6 +53,19 @@ namespace communication::messages{
                 linkedBytes.push(SOM);  // Push value to tail
                 linkedBytes.add(Checksum);  // Add value to header
             };
+
+            char *toChar(){
+                char *buf = new char[MessagePayload.Count()];
+                buf[0] = (char) SOM;
+                buf[1] = (char) MsgSize;
+                buf[2] = (char) MsgID;
+                int i;
+                for (i=0; i<MessagePayload.Count(); i++){
+                    buf[i+3] += (char) MessagePayload[i];
+                }
+                buf[i+3] = (char) Checksum;
+                return buf;
+            };
     };
     
     class Message{

@@ -7,7 +7,7 @@ TaskScheduler::TaskScheduler(){
     //taskID | taskPeriod | taskPriority | estimatedTaskDuration | rtEnabled | cpuAffinityEnabled
     //NavigationTask *navigationTask = new NavigationTask<cactus_rt::schedulers::Other>();
     //RoverDriveTask *roverDriveTask = new RoverDriveTask<cactus_rt::schedulers::Other>();
-    SlaveCommunicationTask *slaveCommunicationTask = new SlaveCommunicationTask(SCHEDULE_POLICY::FIFO, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(10));
+    SlaveCommunicationTask *slaveCommunicationTask = new SlaveCommunicationTask("SlaveCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(10));
     //UserControlTask *userControlTask = new UserControlTask<cactus_rt::schedulers::Other>();
     
     // Add tasks into list
@@ -16,25 +16,29 @@ TaskScheduler::TaskScheduler(){
     //addTask(roverDriveTask);
     addTask(slaveCommunicationTask);
     //addTask(userControlTask);
-    std::cout << "Tasks added" << std::endl;
     std::cout << slaveCommunicationTask->taskID() << std::endl;
     
 };
 
 TaskScheduler::~TaskScheduler(){
-    std::cout << "TaskScheduler destructor is called" << std::endl;
     // Stops tasks in reverse order (Last added task removes first)
+    SCHEDULER_STATUS schedulerStatus = stopScheduler();
+    /*
     for(int i=taskList.Count()-1; i>=0; i--){
+        std::cout << "removing tasks... " << std::to_string(i) << std::endl;
+
         stopTask(taskList[i]);
     }
+    */
+
     // Clear tasks
-    taskList.clear();
+    //taskList.clear();
     //delete[] taskList;
 };
 
 SCHEDULER_STATUS TaskScheduler::startScheduler(){
-    lockMemory();
-    reserveHeap();
+    //lockMemory();
+    //reserveHeap();
 
     bool flag = true;
     // Start tasks
@@ -44,10 +48,10 @@ SCHEDULER_STATUS TaskScheduler::startScheduler(){
         
         auto start_monotonic_time_ns = timing::NowNs();
         auto start_wall_time_ns = timing::WallNowNs();
-        std::cout << "Task starting..." << std::endl;
+        SPDLOG_INFO("Task is starting");
 
         taskList[i]->start(start_monotonic_time_ns, start_wall_time_ns);
-        std::cout << "Task started" << std::endl;
+        SPDLOG_INFO("Task started");
 
     }
     // Join tasks
@@ -72,6 +76,8 @@ SCHEDULER_STATUS TaskScheduler::stopScheduler(){
         flag &= (bool) (stopTask(taskList[i]) != TASK_STATUS::RUNNING_TASK);
     }
     schedulerStatus = (flag)? SCHEDULER_STATUS::Stopped: schedulerStatus;
+    SPDLOG_INFO("All tasks stopped");
+
     return schedulerStatus;
 };
 
@@ -97,6 +103,7 @@ TASK_STATUS TaskScheduler::stopTask(Task *task){
             break;
         }
     };
+
     return result;   
 };
 

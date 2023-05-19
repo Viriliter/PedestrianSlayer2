@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <sys/mman.h>  // necessary for mlockall
+#include <mqueue.h>
 
 #include <cstring>
 #include <stdexcept>
@@ -44,6 +45,14 @@ namespace tasks{
         STOPPED_TASK,  // The task has been run at least once before but it is not running now.
     };
 
+    struct mq_attr{
+        long mq_flags;  // Flags: 0 or O_NONBLOCK
+        long mq_maxmsg;  // Max # of messages on queue
+        long mq_msgsize;  // Max message size (bytes)
+        long mq_curmsgs;  // # of messages currently in queue
+    };
+
+
     constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
     static size_t task_id_;
 
@@ -52,6 +61,7 @@ namespace tasks{
         //std::atomic_bool stop_requested_ = false;
         std::atomic<bool> stop_requested_ = {false};
         size_t taskID_ = 0;
+        std::string task_name_ = "";
         SCHEDULE_POLICY policy_;
         TASK_STATUS taskStatus_ = TASK_STATUS::IDLE_TASK;  // Define task status as idle at first
 
@@ -78,8 +88,8 @@ namespace tasks{
 
         // The constructors and destructors are needed because we need to delete
         // objects of type BaseTask polymorphically.
-        BaseTask(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
-        : policy_(policy), task_priority_(task_priority), period_ns_(period_ns), runtime_ns_(runtime_ns), deadline_ns_(deadline_ns), cpu_affinity_(cpu_affinity){
+        BaseTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
+        : task_name_(task_name), policy_(policy), task_priority_(task_priority), period_ns_(period_ns), runtime_ns_(runtime_ns), deadline_ns_(deadline_ns), cpu_affinity_(cpu_affinity){
             //taskID_ = task_id_;
             //task_id_++;
 
@@ -117,7 +127,7 @@ namespace tasks{
             if (ret < 0) {
                 SPDLOG_ERROR("unable to sched_setattr: {}", std::strerror(errno));
                 throw std::runtime_error{"failed to sched_setattr"};
-            }
+            }          
         };
         virtual ~BaseTask() = default;
 
@@ -160,6 +170,25 @@ namespace tasks{
                     return 0.0;
             };
         };
+    
+        bool createMsgQueue(const char *msgQueueName, mq_attr _attr){
+            mqd_t mq_port = mq_open(msgQueueName, O_CREAT|O_RDWR, 0744, &_attr);
+            return (bool) (mq_port == 3);
+        };
+
+        int readMsgQueue(const char *msgQueueName, char *buf){
+            mqd_t mqd_t = mq_open(msgQueueName, O_RDONLY);
+            int ret_rec = mq_receive(mqd_t, buf, sizeof(buf), NULL);
+            return ret_rec;
+        };
+
+        bool writeMsgQueue(const char *msgQueueName, char *buf, uint64_t bysteSize){
+            mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
+            // TODO send message to the queue according to task priority
+            int ret_rec = mq_send(mqd_t, buf, bysteSize, 0);
+            return (bool) (ret_rec==0);
+        };
+
     };
 
     /*
@@ -187,10 +216,13 @@ namespace tasks{
         };
 
     public:
-        Task(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
-        : BaseTask(policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
+        Task(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
+        : BaseTask(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
         };
-
+        ~Task(){
+            std::cout << "task deconstructor called" << std::endl;
+        };
+        
         /**
          * Starts the task in the background.
          *
@@ -284,7 +316,7 @@ namespace tasks{
             }
 
             afterTask();
-
+            std::cout << "Task aborted" << std::endl;
             taskStatus(TASK_STATUS::STOPPED_TASK);
         };
 
@@ -325,8 +357,8 @@ namespace tasks{
         virtual void traceLoopEnd(double /* loop_latency_us */) noexcept {};
 
     public:
-        CyclicTask(SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
-        : BaseTask(policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
+        CyclicTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
+        : BaseTask(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
         };
 
         int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; };
