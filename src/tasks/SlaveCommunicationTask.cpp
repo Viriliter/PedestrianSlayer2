@@ -30,33 +30,38 @@ SlaveCommunicationTask::SlaveCommunicationTask(std::string task_name, SCHEDULE_P
 
     msg_attr.mq_flags = 0;
     msg_attr.mq_maxmsg = 10;
-    msg_attr.mq_msgsize = 8192;
+    msg_attr.mq_msgsize = MAX_MQ_MSG_SIZE;
     msg_attr.mq_curmsgs = 0;
-    
-    std::cout << "createMsgQueue? " << std::endl;
-    std::cout << createMsgQueue("/SlaveCommunicationTask", msg_attr) << std::endl;
 
-    connectPort();
-    serialPort->SetBaudRate(baudrate);
-};
+    // epoch(uint64_t) - sourceTask - 
 
-SlaveCommunicationTask::~SlaveCommunicationTask()
-{
-    std::cout << "Destructor of SlaveCommunicationTask" << std::endl;
-    terminateTask();
-    std::cout << "Task termination called" << std::endl;
-    disconnectPort();
-    std::cout << "Port disconnected" << std::endl;
-    delete serialPort;
-    std::cout << "Port deleted" << std::endl;
+    // First delete then create new  message queue
+    unlinkMsgQueue("/SlaveCommunicationTask");
+    createMsgQueue("/SlaveCommunicationTask", msg_attr, msg_attr);
+
+    // Connect to serial port
+    bool is_connected = connectPort();
+    if (is_connected){
+        serialPort->SetBaudRate(baudrate);
+    }
+    else{
+        throw std::runtime_error("Cannot connect to port");
+    }
 };
 
 bool SlaveCommunicationTask::connectPort()
 {
-    if (serialPort == NULL)
+    try{
+        if (serialPort == NULL)
+            return false;
+        serialPort->Open(portName);
+        return true;
+    }
+    catch (LibSerial::OpenFailed &ex){
+        std::string exc_msg = "Cannot connect to port" + (std::string) ex.what();
+        SPDLOG_ERROR(exc_msg);
         return false;
-    serialPort->Open(portName);
-    return isConnected;
+    }
 };
 
 void SlaveCommunicationTask::disconnectPort()
@@ -78,11 +83,11 @@ void SlaveCommunicationTask::setBaudrate(BaudRate _baudrate)
     BaudRate baudrate = _baudrate;
 };
 
-std::pair<container::LinkedList<uint8_t>, communication::messages::MessagePacket> 
+std::pair<container::LinkedList<uint8_t>, communication::messages::SerialMessagePacket> 
 SlaveCommunicationTask::parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count)
 {
     //Parses message according to predefined message structure. Message structure can be found in ../doc path
-    communication::messages::MessagePacket packet;
+    communication::messages::SerialMessagePacket packet;
     container::LinkedList<uint8_t> remaining;
     if (rx_bytes.Count() > 3){  // Check header
         if (rx_bytes[0] == 0xAA)
@@ -153,11 +158,30 @@ void SlaveCommunicationTask::runTask(){
             rx_remaining += pair.first;
 
             if (pair.second.MsgSize>0){
-                SPDLOG_INFO(pair.second.toString());
+                //SPDLOG_INFO(pair.second.toString());
+                //std::cout << "Write operation started" << std::endl;
                 char *buf = pair.second.toChar();
-
-                SPDLOG_INFO(writeMsgQueue("/SlaveCommunicationTask", buf, pair.second.MsgSize));
+                std::cout << strlen(buf) << std::endl;
+                char *msg = new char[MAX_MQ_MSG_SIZE-strlen(buf)]{1};
+                std::cout << strlen(msg) << std::endl;
+                std::cout << sizeof(msg) << std::endl;
+                std::cout << MAX_MQ_MSG_SIZE-strlen(buf) << std::endl;
+                strcat(msg, buf);
+                
+                //strcat(buf, msg, strlen(buf));
+                /*
+                std::cout << "----" << std::endl;
+                for(int i=0; i<strlen(buf); i++){
+                    std::cout << std::to_string((uint8_t) buf[i]) << " ";
+                }
+                std::cout << std::endl;
+                std::cout << "----" << std::endl;
+                */
+                std::cout << sizeof(msg) << std::endl;
+                writeMsgQueue("/SlaveCommunicationTask_out", msg, MAX_MQ_MSG_SIZE);
+                // Delete the pointer since the array is created on heap
                 delete buf;
+                //std::cout << "Write operation finished" << std::endl;
             }
         }
         catch (ReadTimeout &err)
@@ -169,4 +193,13 @@ void SlaveCommunicationTask::runTask(){
     else{
         terminateTask();
     }
+};
+
+void SlaveCommunicationTask::afterTask(){
+    std::cout << "SlaveCommunicationTask is stopped" << std::endl;
+    disconnectPort();
+    delete serialPort;
+
+    closeMsgQueue();
+    unlinkMsgQueue("/SlaveCommunicationTask");
 };

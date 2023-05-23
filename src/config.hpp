@@ -18,8 +18,8 @@
 #define SLAVE_BAUD 115200
 #define SLAVE_CON_TIMEOUT 100  // Timeout duration in miliseconds
 
-//Task Scheduling
-#define TASK_COUNT 4  // Defines number of tasks runs in background
+//Task Message Queues
+#define MAX_MQ_MSG_SIZE 255  // Defines size of message queue in bytes
 
 
 #endif  //CONFIG_HPP

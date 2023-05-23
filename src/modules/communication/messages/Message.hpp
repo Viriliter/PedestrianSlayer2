@@ -6,10 +6,15 @@
 #include <memory>
 #include <sstream>
 
-#include "../utils/container.h"
+#include <map>
+#include <any>
+//#include "simdjson.h"
+#include "../../../third-party/nlohmann/json.hpp"
+#include "../../../utils/container.h"
+#include "../../../utils/timing.h"
 
 namespace communication::messages{
-    class MessagePacket{
+    class SerialMessagePacket{
         public:
             uint8_t SOM = 0;
             uint8_t MsgSize = 0;
@@ -55,7 +60,7 @@ namespace communication::messages{
             };
 
             char *toChar(){
-                char *buf = new char[MessagePayload.Count()];
+                char *buf = new char[MessagePayload.Count()+1];
                 buf[0] = (char) SOM;
                 buf[1] = (char) MsgSize;
                 buf[2] = (char) MsgID;
@@ -66,9 +71,23 @@ namespace communication::messages{
                 buf[i+3] = (char) Checksum;
                 return buf;
             };
+
+            uint8_t *toUint8(){
+                uint8_t *buf = new uint8_t[MessagePayload.Count()+1];
+                buf[0] = (uint8_t) SOM;
+                buf[1] = (uint8_t) MsgSize;
+                buf[2] = (uint8_t) MsgID;
+                int i;
+                for (i=0; i<MessagePayload.Count(); i++){
+                    buf[i+3] += (uint8_t) MessagePayload[i];
+                }
+                buf[i+3] = (uint8_t) Checksum;
+                return buf;
+            };
+ 
     };
     
-    class Message{
+    class SerialMessage{
         public:
             std::string msgName;
             uint8_t msgSOM = 0xAA;
@@ -76,13 +95,13 @@ namespace communication::messages{
             uint8_t msgID;
             
             
-            void decodeMessage(MessagePacket &messagePacket){
+            void decodeMessage(SerialMessagePacket &messagePacket){
                 messagePacket.MessagePayload;
             };
 
             void encodeMessage(){
                 container::LinkedList<uint8_t> *tx_message = new container::LinkedList<uint8_t>();
-                MessagePacket message{};
+                SerialMessagePacket message{};
                 message.SOM = msgSOM;
                 message.MsgSize = msgSize;
                 message.MsgID = msgID;
@@ -93,7 +112,7 @@ namespace communication::messages{
             };
     };
 
-    class ControlRover: public Message{
+    class ControlRover: public SerialMessage{
         ControlRover(){
             msgName = "ControlRover";
             uint8_t msgSize;
@@ -101,29 +120,71 @@ namespace communication::messages{
         };
     };
 
-    class CalibrateRover: public Message{
+    class CalibrateRover: public SerialMessage{
         CalibrateRover(){
             msgName = "CalibrateRover";
         };     
     };
 
-    class RoverState: public Message{
+    class RoverState: public SerialMessage{
         RoverState(){
             msgName = "RoverState";
         };      
     };
 
-    class RoverIMU: public Message{
+    class RoverIMU: public SerialMessage{
         RoverIMU(){
             msgName = "RoverIMU";
         };
     };
 
-    class RoverError: public Message{
+    class RoverError: public SerialMessage{
         RoverError(){
             msgName = "RoverError";
+
         };
     };
+
+    struct messageQueue{
+        unsigned long epoch = 0;
+        std::string source = "";
+        nlohmann::json data;
+    };
+
+    template<typename T>
+    class PosixMessage{
+    private:
+        messageQueue message;
+
+    public:
+        nlohmann::json j;
+
+        PosixMessage(std::map<std::string, T> &m_){
+            message.epoch = timing::getEpoch();
+            message.source = "Source";
+            message.data = m_;
+            
+            // {"epoch": {}, "source": {}, "data": {}}  
+        };
+
+        std::string serialize(){
+            /*
+            std::string j_string = nlohmann::to_string(j);
+            std::cout << "JSON OBJECT" << std::endl;
+            std::cout << j_string << std::endl;
+            std::cout << "===========" << std::endl;
+            return j_string;
+            */
+           return "";
+        };
+
+        void deserialize(std::string message){
+
+        };
+
+
+    };
+
 }
 
 #endif  // MESSAGE_HPP

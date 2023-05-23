@@ -6,8 +6,9 @@ enable_testing()
 
 FIND_PACKAGE( OpenCV REQUIRED )  
 FIND_PACKAGE( Threads REQUIRED )
-FIND_PACKAGE(spdlog REQUIRED)
-FIND_LIBRARY(LIBRT rt) 
+FIND_PACKAGE( spdlog REQUIRED )
+FIND_LIBRARY( LIBRT rt ) 
+#FIND_PACKAGE(nlohmann_json REQUIRED)
 INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES( ${LIBSERIAL_INCLUDE_DIRS} )
 
@@ -18,6 +19,7 @@ file (GLOB_RECURSE PedestrianSlayer2_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file (GLOB_RECURSE PedestrianSlayer2_HEADERS CONFIGURE_DEPENDS "src/*.h")
 
 set (PedestrianSlayer2_INCLUDE_DIRS "")
+
 foreach (_headerFile ${PedestrianSlayer2_HEADERS})
     get_filename_component(_dir ${_headerFile} PATH)
     list (APPEND PedestrianSlayer2_INCLUDE_DIRS ${_dir})
@@ -31,6 +33,11 @@ add_compile_options(-pthread)
 add_executable(PedestrianSlayer2 ${PedestrianSlayer2_SOURCES})
 
 target_include_directories(PedestrianSlayer2 PRIVATE ${PedestrianSlayer2_INCLUDE_DIRS})
+#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann/json.hpp)
+#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/json_fwd.hpp)
+#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann)
+#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson/simdjson.cpp)
+#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson.h)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

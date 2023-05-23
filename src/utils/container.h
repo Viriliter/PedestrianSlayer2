@@ -258,8 +258,8 @@ namespace container{
                 }
                 count = 0;
                 
-                head == NULL;
-                tail == NULL;
+                head = NULL;
+                tail = NULL;
             }
 
             std::string toString(){

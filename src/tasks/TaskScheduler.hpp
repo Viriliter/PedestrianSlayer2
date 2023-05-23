@@ -19,10 +19,10 @@
 #include "../utils/container.h"
 
 // Include Tasks
+#include "ControllerTask.hpp"
 //#include "NavigationTask.hpp"
-//#include "RoverDriveTask.hpp"
 #include "SlaveCommunicationTask.hpp"
-//#include "UserControlTask.hpp"
+#include "UserControlTask.hpp"
 //#include "NavigationTask.hpp"
 
 namespace tasks{
@@ -34,7 +34,6 @@ namespace tasks{
 
     class TaskScheduler{
         private:
-            int availableTaskSpace = TASK_COUNT;
             container::LinkedList<Task*> taskList;
 
             //Task **taskList = new Task*[TASK_COUNT];

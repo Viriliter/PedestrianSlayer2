@@ -7,6 +7,8 @@
 
 #include <cstring>
 #include <stdexcept>
+#include <unistd.h>
+#include <errno.h>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -45,13 +47,14 @@ namespace tasks{
         STOPPED_TASK,  // The task has been run at least once before but it is not running now.
     };
 
+    /*
     struct mq_attr{
         long mq_flags;  // Flags: 0 or O_NONBLOCK
         long mq_maxmsg;  // Max # of messages on queue
         long mq_msgsize;  // Max message size (bytes)
         long mq_curmsgs;  // # of messages currently in queue
     };
-
+    */
 
     constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
     static size_t task_id_;
@@ -79,6 +82,8 @@ namespace tasks{
     public:
         TASK_STATUS taskStatus() const {return taskStatus_;};
         size_t taskID() {return taskID_;};
+        mqd_t mq_port_in;
+        mqd_t mq_port_out;
         virtual void start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) = 0;
         virtual int join() = 0;
 
@@ -171,14 +176,45 @@ namespace tasks{
             };
         };
     
-        bool createMsgQueue(const char *msgQueueName, mq_attr _attr){
-            mqd_t mq_port = mq_open(msgQueueName, O_CREAT|O_RDWR, 0744, &_attr);
-            return (bool) (mq_port == 3);
+        bool createMsgQueue(const char *msgQueueName, mq_attr _attr_in, mq_attr _attr_out){
+            size_t lenQueueName = strlen(msgQueueName);
+            char *msgQueueNameIn = new char[lenQueueName+3];
+            char *msgQueueNameOut = new char[lenQueueName+4];
+            std::strcpy(msgQueueNameIn, msgQueueName);
+            std::strcat(msgQueueNameIn, "_in");
+            std::strcpy(msgQueueNameOut, msgQueueName);
+            std::strcat(msgQueueNameOut, "_out");
+            //mq_port_in = mq_open(msgQueueNameIn, O_CREAT|O_RDWR, 0744, &_attr_in);
+            mq_port_out = mq_open(msgQueueNameOut, O_CREAT|O_RDWR|O_NONBLOCK, 0744, &_attr_out);
+            delete[] msgQueueNameIn;
+            delete[] msgQueueNameOut;
+
+            //std::cout << mq_port_in << std::endl;
+            /*
+            if (mq_port_in != 3){
+                int errvalue = errno;
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue(in)"<< std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+            }*/
+            if (mq_port_out != 3){
+                int errvalue = errno;
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue(out)"<< std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+            }
+
+            return (bool) (mq_port_in == 3) && (mq_port_out == 3);
         };
 
-        int readMsgQueue(const char *msgQueueName, char *buf){
+        size_t readMsgQueue(const char *msgQueueName, char *buf){
             mqd_t mqd_t = mq_open(msgQueueName, O_RDONLY);
-            int ret_rec = mq_receive(mqd_t, buf, sizeof(buf), NULL);
+            size_t ret_rec = mq_receive(mqd_t, buf, sizeof(buf), NULL);
+
+            if (ret_rec!=strlen(buf)){
+                int errvalue = errno;
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in readMsgQueue"<< std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+            }
+
             return ret_rec;
         };
 
@@ -186,9 +222,43 @@ namespace tasks{
             mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
             // TODO send message to the queue according to task priority
             int ret_rec = mq_send(mqd_t, buf, bysteSize, 0);
+            if (ret_rec==-1){
+                int errvalue = errno;
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue"<< std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+            }
             return (bool) (ret_rec==0);
         };
+        
+        int closeMsgQueue(){
+            mq_close(mq_port_in);
+            mq_close(mq_port_out);
+            return 0;          
+        };
 
+        int unlinkMsgQueue(const char *msgQueueName){
+            size_t lenQueueName = strlen(msgQueueName);
+            char *msgQueueNameIn = new char[lenQueueName+3];
+            char *msgQueueNameOut = new char[lenQueueName+4];
+            std::strcpy(msgQueueNameIn, msgQueueName);
+            std::strcat(msgQueueNameIn, "_in");
+            std::strcpy(msgQueueNameOut, msgQueueName);
+            std::strcat(msgQueueNameOut, "_out");
+            mq_unlink(msgQueueNameIn);
+            mq_unlink(msgQueueNameOut);
+            delete[] msgQueueNameIn;
+            delete[] msgQueueNameOut;
+            return 0;
+        };
+
+        size_t getAvailableMsgQueue(const char *msgQueueName){
+            mq_attr mq_attr_;
+            mqd_t mqd_port = mq_open(msgQueueName, O_RDONLY);
+            if (mq_getattr(mqd_port, &mq_attr_) == -1)
+                return -1;
+            else
+                return mq_attr_.mq_curmsgs;
+        }
     };
 
     /*
