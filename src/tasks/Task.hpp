@@ -198,35 +198,42 @@ namespace tasks{
             }*/
             if (mq_port_out != 3){
                 int errvalue = errno;
-                std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue(out)"<< std::endl;
+                std::string nn;
+                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue - " << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
 
-            return (bool) (mq_port_in == 3) && (mq_port_out == 3);
+            return (bool) /*(mq_port_in == 3) &&*/ (mq_port_out == 3);
         };
 
-        size_t readMsgQueue(const char *msgQueueName, char *buf){
+        size_t readMsgQueue(const char *msgQueueName, char *buf, size_t buf_size){
             mqd_t mqd_t = mq_open(msgQueueName, O_RDONLY);
-            size_t ret_rec = mq_receive(mqd_t, buf, sizeof(buf), NULL);
+            size_t ret_rec = mq_receive(mqd_t, buf, buf_size, NULL);
 
             if (ret_rec!=strlen(buf)){
                 int errvalue = errno;
-                std::cout << "The error generated was " << std::to_string(errvalue) << " in readMsgQueue"<< std::endl;
+                std::string nn;
+                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in readMsgQueue - " << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
 
             return ret_rec;
         };
 
-        bool writeMsgQueue(const char *msgQueueName, char *buf, uint64_t bysteSize){
+        bool writeMsgQueue(const char *msgQueueName, char *buf, uint64_t bufSize){
             mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
             // TODO send message to the queue according to task priority
-            int ret_rec = mq_send(mqd_t, buf, bysteSize, 0);
+            int ret_rec = mq_send(mqd_t, buf, bufSize, 0);
             if (ret_rec==-1){
                 int errvalue = errno;
-                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue"<< std::endl;
+                std::string nn;
+                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
+
             return (bool) (ret_rec==0);
         };
         

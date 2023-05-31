@@ -31,7 +31,7 @@ namespace tasks{
             void disconnectPort();
             void setPortName(std::string _portName);
             void setBaudrate(BaudRate _baudrate);
-            std::pair<container::LinkedList<uint8_t>, communication::messages::SerialMessagePacket> 
+            std::pair<container::LinkedList<uint8_t>, communication::serial_messages::SerialMessagePacket> 
             parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count);
         
         protected:

@@ -83,11 +83,11 @@ void SlaveCommunicationTask::setBaudrate(BaudRate _baudrate)
     BaudRate baudrate = _baudrate;
 };
 
-std::pair<container::LinkedList<uint8_t>, communication::messages::SerialMessagePacket> 
+std::pair<container::LinkedList<uint8_t>, communication::serial_messages::SerialMessagePacket> 
 SlaveCommunicationTask::parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count)
 {
     //Parses message according to predefined message structure. Message structure can be found in ../doc path
-    communication::messages::SerialMessagePacket packet;
+    communication::serial_messages::SerialMessagePacket packet;
     container::LinkedList<uint8_t> remaining;
     if (rx_bytes.Count() > 3){  // Check header
         if (rx_bytes[0] == 0xAA)
@@ -160,28 +160,41 @@ void SlaveCommunicationTask::runTask(){
             if (pair.second.MsgSize>0){
                 //SPDLOG_INFO(pair.second.toString());
                 //std::cout << "Write operation started" << std::endl;
-                char *buf = pair.second.toChar();
-                std::cout << strlen(buf) << std::endl;
-                char *msg = new char[MAX_MQ_MSG_SIZE-strlen(buf)]{1};
-                std::cout << strlen(msg) << std::endl;
-                std::cout << sizeof(msg) << std::endl;
-                std::cout << MAX_MQ_MSG_SIZE-strlen(buf) << std::endl;
-                strcat(msg, buf);
+                std::string rx_msg = pair.second.toChar();
                 
-                //strcat(buf, msg, strlen(buf));
-                /*
-                std::cout << "----" << std::endl;
-                for(int i=0; i<strlen(buf); i++){
-                    std::cout << std::to_string((uint8_t) buf[i]) << " ";
+                //char *msg = new char[MAX_MQ_MSG_SIZE-strlen(buf)]{1};
+                //strcat(msg, buf);
+
+                  // Create a posix message to send to message queue
+                std::vector<uint8_t> rxMsg = pair.second.toVector();
+
+                communication::posix_messages::PayloadType in_payload{{"Raw", rxMsg}};
+                communication::posix_messages::PosixMessage pMsg("RxMsg", in_payload);
+
+                std::vector<uint8_t> serializedMsg = pMsg.serialize();
+                for(auto &v:serializedMsg)
+                {
+                    std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) v << " ";
                 }
                 std::cout << std::endl;
-                std::cout << "----" << std::endl;
-                */
-                std::cout << sizeof(msg) << std::endl;
-                writeMsgQueue("/SlaveCommunicationTask_out", msg, MAX_MQ_MSG_SIZE);
+
+                communication::posix_messages::PosixMessage pMsg2 = communication::posix_messages::deserialize(serializedMsg);
+                std::cout << "Epoch: " << std::to_string(pMsg2.epoch) << std::endl;
+                std::cout << "Keyword: " << pMsg2.keyword << std::endl;
+
+                std::vector<uint8_t> raw_bytes = pMsg2.getPackageValue<std::vector<uint8_t>>("Raw");
+                for(auto &byte:raw_bytes)
+                {
+                    std::cout << " ---" << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) byte << " ";
+                }
+
+                std::cout << std::endl;
+                std::cout << "==========" << std::endl;
+
+                //strcat(buf, msg, strlen(buf));
+                //writeMsgQueue("/SlaveCommunicationTask_out", msg, MAX_MQ_MSG_SIZE);
                 // Delete the pointer since the array is created on heap
-                delete buf;
-                //std::cout << "Write operation finished" << std::endl;
+                //delete buf;
             }
         }
         catch (ReadTimeout &err)

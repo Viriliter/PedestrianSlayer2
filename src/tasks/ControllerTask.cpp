@@ -1,6 +1,4 @@
 #include "ControllerTask.hpp"
-#include "../modules/communication/messages/Message.hpp"
-
 
 using namespace tasks;
 
@@ -25,9 +23,21 @@ void ControllerTask::beforeTask(){
 };
 
 void ControllerTask::runTask(){
+    if (getAvailableMsgQueue("/SlaveCommunicationTask_out")>0){
+        char buf[MAX_MQ_MSG_SIZE+1] = "";
+        
+        readMsgQueue("/SlaveCommunicationTask_out", buf, MAX_MQ_MSG_SIZE+1);
+        std::string r = "";
+
+        SPDLOG_INFO("Received message: " + r);
+    }
+    /*    
     std::map<std::string, int> my_map{{"CPU", 10}, {"GPU", 15}, {"RAM", 20}};
     communication::messages::PosixMessage<int> m(my_map);
-    std::string my_string = m.toString();
+    
+    std::string my_string = m.serialize();
+    SPDLOG_INFO(my_string);
+    */
 };
 
 void ControllerTask::afterTask(){

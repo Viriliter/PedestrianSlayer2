@@ -3,6 +3,10 @@
 
 #include "Task.hpp"
 
+#include "../config.hpp"
+#include "../modules/communication/messages/Message.hpp"
+#include "../utils/container.h"
+
 namespace tasks{
     class ControllerTask: public Task{
         public:

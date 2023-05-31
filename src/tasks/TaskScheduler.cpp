@@ -12,10 +12,10 @@ TaskScheduler::TaskScheduler(){
     
     // Add tasks into list
     
-    addTask(controllerTask);
+    //addTask(controllerTask);
     //addTask(navigationTask);
     addTask(slaveCommunicationTask);
-    addTask(userControlTask);
+    //addTask(userControlTask);
     std::cout << controllerTask->taskID() << std::endl;
     std::cout << slaveCommunicationTask->taskID() << std::endl;
     std::cout << userControlTask->taskID() << std::endl;
