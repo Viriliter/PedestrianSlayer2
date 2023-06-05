@@ -8,7 +8,9 @@
 
 #include "../config.hpp"
 #include "../modules/communication/messages/Message.hpp"
+#include "../utils/timing.h"
 #include "../utils/container.h"
+#include "../utils/types.h"
 
 using namespace LibSerial;
 
@@ -22,7 +24,7 @@ namespace tasks{
             bool isConnected;
             int timeoutSlave = SLAVE_CON_TIMEOUT;
 
-            container::LinkedList<uint8_t> rx_remaining;
+            container::LinkedList<UINT8> rx_remaining;
 
         public:
             SlaveCommunicationTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=0, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity={});
@@ -31,7 +33,7 @@ namespace tasks{
             void disconnectPort();
             void setPortName(std::string _portName);
             void setBaudrate(BaudRate _baudrate);
-            std::pair<container::LinkedList<uint8_t>, communication::serial_messages::SerialMessagePacket> 
+            std::pair<container::LinkedList<uint8_t>, comm::serial::SerialMessagePacket> 
             parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count);
         
         protected:

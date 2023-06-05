@@ -1,9 +1,5 @@
 #include "SlaveCommunicationTask.hpp"
 
-#include <string>
-#include "../utils/timing.h"
-#include "../utils/container.h"
-
 using namespace LibSerial;
 using namespace tasks;
 
@@ -83,11 +79,11 @@ void SlaveCommunicationTask::setBaudrate(BaudRate _baudrate)
     BaudRate baudrate = _baudrate;
 };
 
-std::pair<container::LinkedList<uint8_t>, communication::serial_messages::SerialMessagePacket> 
-SlaveCommunicationTask::parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count)
+std::pair<container::LinkedList<UINT8>, comm::serial::SerialMessagePacket> 
+SlaveCommunicationTask::parseIncommingBytes(container::LinkedList<UINT8> &rx_bytes, int byte_count)
 {
     //Parses message according to predefined message structure. Message structure can be found in ../doc path
-    communication::serial_messages::SerialMessagePacket packet;
+    comm::serial::SerialMessagePacket packet;
     container::LinkedList<uint8_t> remaining;
     if (rx_bytes.Count() > 3){  // Check header
         if (rx_bytes[0] == 0xAA)
@@ -144,15 +140,15 @@ void SlaveCommunicationTask::beforeTask(){
 void SlaveCommunicationTask::runTask(){
     if (serialPort->IsOpen())
     {
-        container::LinkedList<uint8_t> rx_buffer;
+        container::LinkedList<UINT8> rx_buffer;
         try
         {
             int available_byte_count = serialPort->GetNumberOfBytesAvailable();
-            for (int i = 0; i < available_byte_count; i++)
+            for (size_t i = 0; i < available_byte_count; i++)
             {
                 char rx_byte;
                 serialPort->ReadByte(rx_byte, timeoutSlave);
-                rx_buffer.add((uint8_t) rx_byte);
+                rx_buffer.add((UINT8) rx_byte);
             }
             auto pair = parseIncommingBytes(rx_buffer, available_byte_count);
             rx_remaining += pair.first;
@@ -160,37 +156,30 @@ void SlaveCommunicationTask::runTask(){
             if (pair.second.MsgSize>0){
                 //SPDLOG_INFO(pair.second.toString());
                 //std::cout << "Write operation started" << std::endl;
-                std::string rx_msg = pair.second.toChar();
+                //char *rx_msg = pair.second.toChar();
                 
                 //char *msg = new char[MAX_MQ_MSG_SIZE-strlen(buf)]{1};
                 //strcat(msg, buf);
 
                   // Create a posix message to send to message queue
-                std::vector<uint8_t> rxMsg = pair.second.toVector();
+                std::vector<UINT8> rxMsg = pair.second.toVector();
 
-                communication::posix_messages::PayloadType in_payload{{"Raw", rxMsg}};
-                communication::posix_messages::PosixMessage pMsg("RxMsg", in_payload);
+                // Create IPC message for posix queue
+                comm::ipc::PayloadType in_payload;
+                comm::ipc::insert_package<std::vector<UINT8>>(in_payload, "Raw", rxMsg);
+                comm::ipc::IPCMessage pMsg("RxMsg", in_payload);
+                std::vector<UINT8> serializedMsg = pMsg.serialize();
 
-                std::vector<uint8_t> serializedMsg = pMsg.serialize();
+                writeMsgQueue("/SlaveCommunicationTask_out", serializedMsg, serializedMsg.size());
+
+                /*
                 for(auto &v:serializedMsg)
                 {
                     std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) v << " ";
                 }
                 std::cout << std::endl;
-
-                communication::posix_messages::PosixMessage pMsg2 = communication::posix_messages::deserialize(serializedMsg);
-                std::cout << "Epoch: " << std::to_string(pMsg2.epoch) << std::endl;
-                std::cout << "Keyword: " << pMsg2.keyword << std::endl;
-
-                std::vector<uint8_t> raw_bytes = pMsg2.getPackageValue<std::vector<uint8_t>>("Raw");
-                for(auto &byte:raw_bytes)
-                {
-                    std::cout << " ---" << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) byte << " ";
-                }
-
-                std::cout << std::endl;
-                std::cout << "==========" << std::endl;
-
+                */
+                
                 //strcat(buf, msg, strlen(buf));
                 //writeMsgQueue("/SlaveCommunicationTask_out", msg, MAX_MQ_MSG_SIZE);
                 // Delete the pointer since the array is created on heap
@@ -209,7 +198,8 @@ void SlaveCommunicationTask::runTask(){
 };
 
 void SlaveCommunicationTask::afterTask(){
-    std::cout << "SlaveCommunicationTask is stopped" << std::endl;
+    SPDLOG_INFO("Task has been stopped.");
+
     disconnectPort();
     delete serialPort;
 

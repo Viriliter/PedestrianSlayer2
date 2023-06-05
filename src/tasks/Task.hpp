@@ -23,6 +23,8 @@
 #include "schedulers.hpp"
 #include "../utils/threading/latency_tracker.h"
 #include "../utils/timing.h"
+#include "../config.hpp"
+#include "../utils/types.h"
 
 namespace tasks{
     enum SCHEDULE_POLICY{
@@ -93,7 +95,7 @@ namespace tasks{
 
         // The constructors and destructors are needed because we need to delete
         // objects of type BaseTask polymorphically.
-        BaseTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
+        BaseTask(std::string &task_name, SCHEDULE_POLICY &policy, TASK_PRIORITY &task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
         : task_name_(task_name), policy_(policy), task_priority_(task_priority), period_ns_(period_ns), runtime_ns_(runtime_ns), deadline_ns_(deadline_ns), cpu_affinity_(cpu_affinity){
             //taskID_ = task_id_;
             //task_id_++;
@@ -207,25 +209,49 @@ namespace tasks{
             return (bool) /*(mq_port_in == 3) &&*/ (mq_port_out == 3);
         };
 
-        size_t readMsgQueue(const char *msgQueueName, char *buf, size_t buf_size){
+        uint16_t readMsgQueue(const char *msgQueueName, char *queue){
+            uint16_t queueSize = 0;
+            mq_attr mq_attr_;
             mqd_t mqd_t = mq_open(msgQueueName, O_RDONLY);
-            size_t ret_rec = mq_receive(mqd_t, buf, buf_size, NULL);
+            
+            if (mq_getattr(mqd_t, &mq_attr_) == -1)
+                return 0;
+            
+            // Check whether there is any available message in the queue
+            if (mq_attr_.mq_curmsgs<=0) return 0;
 
-            if (ret_rec!=strlen(buf)){
+            size_t ret_rec = mq_receive(mqd_t, queue, MAX_MQ_MSG_SIZE+1, NULL);
+
+            if (ret_rec < 2){
                 int errvalue = errno;
                 std::string nn;
                 for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
                 std::cout << "The error generated was " << std::to_string(errvalue) << " in readMsgQueue - " << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
+            else{
+                queueSize = queue[0] | (queue[1] << 8);
+                //queue += 2;  // Skip queue size in message queue
+            }
 
-            return ret_rec;
+            return queueSize;
         };
 
-        bool writeMsgQueue(const char *msgQueueName, char *buf, uint64_t bufSize){
+        bool writeMsgQueue(const char *msgQueueName, char *queue, uint64_t queueSize){
             mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
-            // TODO send message to the queue according to task priority
-            int ret_rec = mq_send(mqd_t, buf, bufSize, 0);
+            // TODO send message to the queue according to task priority              
+            if (queueSize > MAX_MQ_MSG_SIZE) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
+
+            char *buf = new char[MAX_MQ_MSG_SIZE];
+            // First two bytes defines the size of the queue
+            buf[0] = queueSize & 0x00FF;
+            buf[1] = (queueSize & 0xFF00) >> 8;
+
+            for (size_t i=0; i< queueSize; i++){
+                buf[i+2] = queue[i];
+            }
+
+            int ret_rec = mq_send(mqd_t, buf, MAX_MQ_MSG_SIZE, 0);
             if (ret_rec==-1){
                 int errvalue = errno;
                 std::string nn;
@@ -233,6 +259,35 @@ namespace tasks{
                 std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
+            delete[] buf;
+
+            return (bool) (ret_rec==0);
+        };
+
+        template<typename T>
+        bool writeMsgQueue(const char *msgQueueName, std::vector<T> &queue, uint64_t queueSize){
+            mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
+            // TODO send message to the queue according to task priority              
+            if (queueSize > MAX_MQ_MSG_SIZE) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
+
+            char *buf = new char[MAX_MQ_MSG_SIZE];
+            // First two bytes defines the size of the queue
+            buf[0] = queueSize & 0x00FF;
+            buf[1] = (queueSize & 0xFF00) >> 8;
+
+            for (size_t i=0; i< queueSize; i++){
+                buf[i+2] = queue[i];
+            }
+
+            int ret_rec = mq_send(mqd_t, buf, MAX_MQ_MSG_SIZE, 0);
+            if (ret_rec==-1){
+                int errvalue = errno;
+                std::string nn;
+                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+            }
+            delete[] buf;
 
             return (bool) (ret_rec==0);
         };
@@ -277,7 +332,6 @@ namespace tasks{
     class Task : public BaseTask {
     private:
         pthread_t task_;
-        std::vector<size_t> cpu_affinity_;
 
         struct timespec next_wakeup_time_;
     
@@ -293,7 +347,7 @@ namespace tasks{
         };
 
     public:
-        Task(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
+        Task(std::string &task_name, SCHEDULE_POLICY &policy, TASK_PRIORITY &task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
         : BaseTask(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
         };
         ~Task(){
@@ -393,8 +447,9 @@ namespace tasks{
             }
 
             afterTask();
-            std::cout << "Task aborted" << std::endl;
-            taskStatus(TASK_STATUS::STOPPED_TASK);
+            SPDLOG_INFO("Aborted");
+
+           taskStatus(TASK_STATUS::STOPPED_TASK);
         };
 
     };
@@ -408,11 +463,8 @@ namespace tasks{
     private:
         schedulers::Config scheduler_config_;
         pthread_t task_;
-        std::vector<size_t> cpu_affinity_;
-        size_t stack_size_ = (static_cast<size_t>(PTHREAD_STACK_MIN) + kDefaultStackSize);
         bool rt_enabled = false;
 
-        int64_t period_ns_;
         int64_t start_monotonic_time_ns_ = 0;
         int64_t start_wall_time_ns_ = 0;
         struct timespec next_wakeup_time_;
@@ -434,7 +486,7 @@ namespace tasks{
         virtual void traceLoopEnd(double /* loop_latency_us */) noexcept {};
 
     public:
-        CyclicTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
+        CyclicTask(std::string &task_name, SCHEDULE_POLICY &policy, TASK_PRIORITY &task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
         : BaseTask(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
         };
 

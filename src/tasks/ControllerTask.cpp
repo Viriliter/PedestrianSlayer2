@@ -23,26 +23,25 @@ void ControllerTask::beforeTask(){
 };
 
 void ControllerTask::runTask(){
-    if (getAvailableMsgQueue("/SlaveCommunicationTask_out")>0){
-        char buf[MAX_MQ_MSG_SIZE+1] = "";
+    char queue[MAX_MQ_MSG_SIZE+1];
+    UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_out", queue);
+    if (queueSize>0){
+        // Start from index 2 since first two bytes are length of queue message
+        comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue+2, queueSize);
+        auto raw_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
         
-        readMsgQueue("/SlaveCommunicationTask_out", buf, MAX_MQ_MSG_SIZE+1);
-        std::string r = "";
-
-        SPDLOG_INFO("Received message: " + r);
+        std::cout << "----";
+        for(auto &raw_byte:raw_bytes)
+        {
+            std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) raw_byte << " ";
+        }
+        std::cout << std::endl;
     }
-    /*    
-    std::map<std::string, int> my_map{{"CPU", 10}, {"GPU", 15}, {"RAM", 20}};
-    communication::messages::PosixMessage<int> m(my_map);
-    
-    std::string my_string = m.serialize();
-    SPDLOG_INFO(my_string);
-    */
 };
 
 void ControllerTask::afterTask(){
-    std::cout << "ControllerTask is stopped" << std::endl;
-    
+    SPDLOG_INFO("Task has been stopped.");
+
     closeMsgQueue();
     unlinkMsgQueue("/ControllerTask");
 };

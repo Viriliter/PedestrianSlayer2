@@ -1,0 +1,7 @@
+#ifndef TERMINATIONMODE_HPP
+#define TERMINATIONMODE_HPP
+
+#include "Mode.hpp"
+
+
+#endif  //TERMINATIONMODE_HPP

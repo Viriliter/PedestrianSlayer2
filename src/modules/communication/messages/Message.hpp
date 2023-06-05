@@ -16,7 +16,7 @@
 #include "../../../utils/timing.h"
 #include "../../../utils/types.h"
 
-namespace communication::serial_messages{
+namespace comm::serial{
     class SerialMessagePacket{
         public:
             UINT8 SOM = 0x00;
@@ -137,6 +137,8 @@ namespace communication::serial_messages{
                 message.Checksum = message.calcChecksum();
             };
     };
+
+    // region SerialMessages
 
     class ControlRover: public SerialMessage{
     public:
@@ -278,32 +280,19 @@ namespace communication::serial_messages{
         }
 
     };
+
+    // endregion
 }
 
-namespace communication::posix_messages{
-    enum PosixDataTypes{
-        pUINT8,
-        pUINT16,
-        pUINT32,
-        pUINT64,
-        pINT8,
-        pINT16,
-        pINT32,
-        pINT64,
-        pFLOAT,
-        pDOUBLE,
-        pLONG,
-        pLONG_LONG,
-        pVECTOR_UINT8        
-    };
+namespace comm::ipc{
 
-    typedef std::string PackageValueType;
-    typedef std::vector<UINT8> PackageValue;
-    //typedef std::variant<std::vector<UINT8>> PackageValue;
+    typedef std::string PackageKeyType; // <data type, data value> 
+    typedef std::variant<UINT8, UINT16, UINT32, UINT64, 
+                         INT8, INT16, INT32, INT64,
+                         FLOAT, DOUBLE, LONG, LONG_LONG,
+                         std::vector<UINT8>> PackageValueType;
 
-    //typedef std::pair<PackageValueType, PackageValue> PackageType; // <data type, data value> 
-    typedef PackageValue PackageType; // <data type, data value> 
-    typedef std::map<std::string, PackageType> PayloadType; // <data key, data pair>
+    typedef std::map<PackageKeyType, PackageValueType> PayloadType; // <data key, data pair>
 
     //std::map<std::string, std::vector<uint8_t>> posixDataType;
 
@@ -313,7 +302,7 @@ namespace communication::posix_messages{
         PayloadType payload;
     };
 
-    class PosixMessage{
+    class IPCMessage{
     private:
         nlohmann::json obj_;
     public:
@@ -322,9 +311,12 @@ namespace communication::posix_messages{
         PayloadType payload;
 
         
-        PosixMessage(nlohmann::json &obj): obj_(obj){};
+        IPCMessage(nlohmann::json &obj): obj_(obj){
+            //epoch = obj_["epoch"];
+            //keyword = obj_["keyword"];
+        };
 
-        PosixMessage(std::string keyword, PayloadType payload): keyword(keyword), payload(payload){
+        IPCMessage(std::string keyword, PayloadType &payload): keyword(keyword), payload(payload){
             epoch = timing::getEpoch();
         };
 
@@ -336,8 +328,22 @@ namespace communication::posix_messages{
                 std::string key = (std::string) package.first;
                 // Check whether first character is underscore. (Underscore keys are omitted by default)
                 if (key[0] == '_') continue;
-
-                obj_[key] = package.second;
+                
+                if (const auto ptrValue(std::get_if<UINT8>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<UINT16>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<UINT32>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<UINT64>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<INT8>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<INT16>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<INT32>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                //else if (const auto ptrValue(std::get_if<INT64>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<FLOAT>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<DOUBLE>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                //else if (const auto ptrValue(std::get_if<LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<LONG_LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<std::vector<UINT8>>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                
+                // obj_[key] = package.second;
                 /*
                 PackageType value = std::make_pair("-", package.second);
                 obj_[key] = value;
@@ -346,6 +352,46 @@ namespace communication::posix_messages{
             std::vector<uint8_t> v = nlohmann::json::to_msgpack(obj_);
 
             return v;
+            //return nlohmann::to_string(obj_);
+        };
+        
+        char *serialize2char(){
+            obj_["_epoch"] = epoch;
+            obj_["_keyword"] = keyword;
+        
+            for(auto const &package:payload){
+                std::string key = (std::string) package.first;
+                // Check whether first character is underscore. (Underscore keys are omitted by default)
+                if (key[0] == '_') continue;
+                
+                if (const auto ptrValue(std::get_if<UINT8>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<UINT16>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<UINT32>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<UINT64>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<INT8>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<INT16>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<INT32>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                //else if (const auto ptrValue(std::get_if<INT64>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<FLOAT>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<DOUBLE>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                //else if (const auto ptrValue(std::get_if<LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<LONG_LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                else if (const auto ptrValue(std::get_if<std::vector<UINT8>>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                
+                // obj_[key] = package.second;
+                /*
+                PackageType value = std::make_pair("-", package.second);
+                obj_[key] = value;
+                */
+            }
+            std::vector<uint8_t> serialized_vector = nlohmann::json::to_msgpack(obj_);
+            char *buf = new char[serialized_vector.size()];
+            size_t i = 0;
+            for (auto &b:serialized_vector){
+                buf[i] = b;
+                i++;
+            }
+            return buf;
             //return nlohmann::to_string(obj_);
         };
         
@@ -362,31 +408,16 @@ namespace communication::posix_messages{
             throw "No Package named '" + packageName + "' exists in " +  keyword + " message";
         }
     };
-    /*
-    static std::any dataConversion(PosixDataTypes type, std::any value){
-        switch(type){
-            case(pUINT8): return std::any_cast<UINT8>(value);
-            case(pUINT16): return std::any_cast<UINT16>(value);
-            case(pUINT32): return std::any_cast<UINT32>(value);
-            case(pUINT64): return std::any_cast<UINT64>(value);
-            case(pINT8): return std::any_cast<INT8>(value);
-            case(pINT16): return std::any_cast<INT16>(value);
-            case(pINT32): return std::any_cast<INT32>(value);
-            case(pINT64): return std::any_cast<INT64>(value);
-            case(pFLOAT): return std::any_cast<FLOAT>(value);
-            case(pDOUBLE): return std::any_cast<DOUBLE>(value);
-            case(pLONG): return std::any_cast<LONG>(value);
-            case(pLONG_LONG): return std::any_cast<LONG_LONG>(value);
-            case(pVECTOR_UINT8): return std::any_cast<std::vector<UINT8>>(value);
-            default: throw "Invalid type keyword";
-        };
+
+    template<typename T>
+    void insert_package(PayloadType &payload, std::string packageKeyName, T &packageValue){
+        payload.insert( std::pair<PackageKeyType, PackageValueType>(packageKeyName, static_cast<T>(packageValue)));
     };
-    */
-   
-    inline PosixMessage deserialize(std::vector<UINT8> rawMessage){
+
+    inline IPCMessage deserialize(const std::vector<UINT8> &rawMessage){
         nlohmann::json obj_ = nlohmann::json::from_msgpack(rawMessage);
 
-        PosixMessage message(obj_);
+        IPCMessage message(obj_);
         for (auto &item: obj_.items()){
             if (item.key() == "_epoch") message.epoch = static_cast<unsigned long>(item.value());
             else if (item.key() == "_keyword") message.keyword = item.value();
@@ -412,6 +443,26 @@ namespace communication::posix_messages{
         */
         return message;
     };
+
+    inline IPCMessage deserialize(char *buf, int bufSize){
+        nlohmann::json obj_;
+
+        if (bufSize<=0) {
+            IPCMessage message(obj_);
+            return message;
+        }
+        
+        obj_ = nlohmann::json::from_msgpack(buf, buf+bufSize);
+
+        IPCMessage message(obj_);
+        for (auto &item: obj_.items()){
+            if (item.key() == "_epoch") message.epoch = static_cast<unsigned long>(item.value());
+            else if (item.key() == "_keyword") message.keyword = item.value();
+            else continue;
+        }
+        return message;
+    };
+
 }
 
 #endif  // MESSAGE_HPP

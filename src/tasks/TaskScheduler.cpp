@@ -12,7 +12,7 @@ TaskScheduler::TaskScheduler(){
     
     // Add tasks into list
     
-    //addTask(controllerTask);
+    addTask(controllerTask);
     //addTask(navigationTask);
     addTask(slaveCommunicationTask);
     //addTask(userControlTask);

@@ -27,25 +27,7 @@ void UserControlTask::runTask(){
     //std::cout << "Read operation started" << std::endl;
     //std::cout << "----" << std::endl;
     while (getAvailableMsgQueue("/SlaveCommunicationTask_out")>0){
-        char buf[MAX_MQ_MSG_SIZE+1] = "";
-        
-        readMsgQueue("/SlaveCommunicationTask_out", buf, MAX_MQ_MSG_SIZE+1);
-        std::string r = "";
-        for(int i=0; i<sizeof(buf); i++){
-            r += std::to_string((uint8_t) buf[i]) + " ";
-        }
-        //std::cout << r << std::endl;
-        SPDLOG_INFO("Received message: " + r);
-
-        /*
-        std::cout << "Received message: ";
-        for(int i=0; i<sizeof(buf); i++){
-        {
-            std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int)buf[i] << " ";
-        }
-        std::cout << std::endl;
-        */
-
+        break;
     }
     //std::cout << "----" << std::endl;
     //std::cout << "Read operation finished" << std::endl;
