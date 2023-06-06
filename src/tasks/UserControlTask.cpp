@@ -24,14 +24,10 @@ UserControlTask::UserControlTask(std::string task_name, SCHEDULE_POLICY policy, 
 };
 
 void UserControlTask::runTask(){
-    //std::cout << "Read operation started" << std::endl;
-    //std::cout << "----" << std::endl;
-    while (getAvailableMsgQueue("/SlaveCommunicationTask_out")>0){
-        break;
-    }
-    //std::cout << "----" << std::endl;
-    //std::cout << "Read operation finished" << std::endl;
-
+    //char in;
+    std::cout << "Enter input:"<< std::endl;
+    //std::cin >> in;
+    //std::cout << ">>>>> " << in << std::endl;
 }
 
 

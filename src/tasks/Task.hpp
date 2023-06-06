@@ -186,7 +186,7 @@ namespace tasks{
             std::strcat(msgQueueNameIn, "_in");
             std::strcpy(msgQueueNameOut, msgQueueName);
             std::strcat(msgQueueNameOut, "_out");
-            //mq_port_in = mq_open(msgQueueNameIn, O_CREAT|O_RDWR, 0744, &_attr_in);
+            mq_port_in = mq_open(msgQueueNameIn, O_CREAT|O_RDWR, 0744, &_attr_in);
             mq_port_out = mq_open(msgQueueNameOut, O_CREAT|O_RDWR|O_NONBLOCK, 0744, &_attr_out);
             delete[] msgQueueNameIn;
             delete[] msgQueueNameOut;

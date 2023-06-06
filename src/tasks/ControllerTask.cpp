@@ -23,11 +23,12 @@ void ControllerTask::beforeTask(){
 };
 
 void ControllerTask::runTask(){
-    char queue[MAX_MQ_MSG_SIZE+1];
-    UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_out", queue);
-    if (queueSize>0){
+    // Get user inputs
+    char queue_user_ctrl[MAX_MQ_MSG_SIZE+1];
+    UINT16 queueSizeUserCtrl = readMsgQueue("/UserControlTask_out", queue_user_ctrl);
+    if (queueSizeUserCtrl>0){
         // Start from index 2 since first two bytes are length of queue message
-        comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue+2, queueSize);
+        comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_user_ctrl+2, queueSizeUserCtrl);
         auto raw_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
         
         std::cout << "----";
@@ -37,6 +38,45 @@ void ControllerTask::runTask(){
         }
         std::cout << std::endl;
     }
+    
+    char queue_slave_comm_out[MAX_MQ_MSG_SIZE+1];
+    UINT16 queueSizeSlaveCommOut = readMsgQueue("/SlaveCommunicationTask_out", queue_slave_comm_out);
+    if (queueSizeSlaveCommOut>0){
+        // Start from index 2 since first two bytes are length of queue message
+        comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_slave_comm_out+2, queueSizeSlaveCommOut);
+        auto raw_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
+        
+        std::cout << "----";
+        for(auto &raw_byte:raw_bytes)
+        {
+            std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) raw_byte << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    if (lastMode!=currentMode){  // Mode transition
+        switch(currentMode){
+            case(IdleMode): myMode = modes::IdleMode(); break;
+            case(StartupMode): myMode = modes::StartupMode(); break;
+            case(TestMode): myMode = modes::TestMode(); break;
+            case(UserMode): myMode = modes::UserMode(); break;
+            case(AutoMode): myMode = modes::AutoMode(); break;
+            case(TerminationMode): myMode = modes::TerminationMode(); break;
+        }
+    }
+    else{
+        myMode.do_job();
+    }
+    
+    // Create IPC message for posix queue
+    std::vector<UINT8> txMsg;
+    comm::ipc::PayloadType in_payload;
+    comm::ipc::insert_package<std::vector<UINT8>>(in_payload, "Raw", txMsg);
+
+    comm::ipc::IPCMessage pMsg("TxMsg", in_payload);
+    std::vector<UINT8> serializedMsg = pMsg.serialize();
+    
+    writeMsgQueue("/SlaveCommunicationTask_in", serializedMsg, serializedMsg.size());
 };
 
 void ControllerTask::afterTask(){

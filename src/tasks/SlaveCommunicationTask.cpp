@@ -140,6 +140,7 @@ void SlaveCommunicationTask::beforeTask(){
 void SlaveCommunicationTask::runTask(){
     if (serialPort->IsOpen())
     {
+        //Read received serial messages
         container::LinkedList<UINT8> rx_buffer;
         try
         {
@@ -154,13 +155,6 @@ void SlaveCommunicationTask::runTask(){
             rx_remaining += pair.first;
 
             if (pair.second.MsgSize>0){
-                //SPDLOG_INFO(pair.second.toString());
-                //std::cout << "Write operation started" << std::endl;
-                //char *rx_msg = pair.second.toChar();
-                
-                //char *msg = new char[MAX_MQ_MSG_SIZE-strlen(buf)]{1};
-                //strcat(msg, buf);
-
                   // Create a posix message to send to message queue
                 std::vector<UINT8> rxMsg = pair.second.toVector();
 
@@ -171,25 +165,31 @@ void SlaveCommunicationTask::runTask(){
                 std::vector<UINT8> serializedMsg = pMsg.serialize();
 
                 writeMsgQueue("/SlaveCommunicationTask_out", serializedMsg, serializedMsg.size());
-
-                /*
-                for(auto &v:serializedMsg)
-                {
-                    std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) v << " ";
-                }
-                std::cout << std::endl;
-                */
-                
-                //strcat(buf, msg, strlen(buf));
-                //writeMsgQueue("/SlaveCommunicationTask_out", msg, MAX_MQ_MSG_SIZE);
-                // Delete the pointer since the array is created on heap
-                //delete buf;
             }
         }
         catch (ReadTimeout &err)
         {
             err.what();
         }
+
+        //Send serial messages
+        try{
+            char queue[MAX_MQ_MSG_SIZE+1];
+            UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_in", queue);
+            if (queueSize>0){
+                // Start from index 2 since first two bytes are length of queue message
+                comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue+2, queueSize);
+                auto tx_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
+                for (auto const &tx_byte: tx_bytes){
+                    serialPort->Write(tx_bytes);
+                }
+                serialPort->FlushOutputBuffer();
+            }
+        }
+        catch (std::exception &err){
+            err.what();
+        }
+
         //timing::sleep(100, timing::timeFormat::formatMiliseconds);
     }
     else{
