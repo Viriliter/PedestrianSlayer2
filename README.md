@@ -11,7 +11,7 @@ This project is a new version of Pedestrian Car Project (https://github.com/Viri
 ### Installing
 Write following command on the terminal to clone the project:
 ```
-git clone https://github.com/Viriliter/PedestrianSlayer2/
+git clone -b rover https://github.com/Viriliter/PedestrianSlayer2/
 ```
 
 ## Goals
