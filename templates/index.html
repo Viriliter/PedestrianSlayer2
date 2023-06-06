@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    .case {
+    background-color: #463973;
+    border-color: #2e2640;
+    border-radius: 5px;
+    border-style: solid;
+    border-width: 8px 10px 15px 10px;
+    display: inline-grid;
+    grid-template-columns: repeat(36, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    height: 17em;
+    padding: 5px;
+    user-select: none;
+    width: 60em;
+    }
+
+    .key {
+    border-color: #382e59 #2e2640;
+    border-radius: 2px;
+    border-style: solid;
+    border-width: 3px 5px 8px 5px;
+    color: #bbadd9;
+    display: block;
+    font-family: sans-serif;
+    font-size: 9px;
+    font-weight: 800;
+    grid-column-end: span 2;
+    margin: 3px;
+    padding-top: 2px;
+    padding: 5px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 50ms ease-out;
+    will-change: box-shadow, color, text-shadow;
+    }
+
+    .key:empty::before {
+    content: attr(data-key);
+    }
+
+    .active {
+    transform: perspective(1200px) translateZ(-90px);
+    }
+
+    .medium {
+    grid-column-end: span 3;
+    }
+
+    .large {
+    grid-column-end: span 4;
+    }
+
+    .xl {
+    grid-column-end: span 5;
+    }
+
+    .xxl {
+    grid-column-end: span 6;
+    }
+
+    .xxxl {
+    grid-column-end: 7;
+    }
+
+    .huge {
+    grid-column-end: span 12;
+    }
+
+</style>
+
+<body>
+    <div class="text-center">
+        <div>
+            <p class="header-text">DASHBOARD</p>
+        </div>
+        <div class="row rounded_panel" style="height:500px">
+            <!--
+            <div class="col" style="width: 40%; color: #3a3a3a; margin-left: auto; margin-right: 0; overflow: auto; align-content: bottom; ">
+                <input id="slider_steer" type="range" min="0" max="100" value="50" class="slider" style="height: min-content; width: auto;">
+            </div>
+
+            <div class="col" style="width: 10%; color: #3a3a3a; margin-left: auto; margin-right: 0; overflow: auto;">
+                <input id="slider_thrust" type="range" min="0" max="100" value="0" class="slider" style="margin-bottom: 0; margin-top: 0; height: 100px; width: min-content; transform: rotate(270deg);">
+            </div>
+                <div class="col" style="width: 80%; color: #3a3a3a; margin-left: auto; margin-right: 0; overflow: auto;">
+            </div>
+            -->
+            <p style="text-align: center;">
+                X: <span id="x_coordinate"> </span>
+                Y: <span id="y_coordinate"> </span>
+                Speed: <span id="speed"> </span> %
+                Angle: <span id="angle"> </span>
+            </p>
+            <!--canvas class ="row" id="canvas"></canvas-->
+
+            <div class="case">
+                <!-- First row -->
+                <div class="key" data-key="escape">esc</div>
+                <div class="key" data-key="1"></div>
+                <div class="key" data-key="2"></div>
+                <div class="key" data-key="3"></div>
+                <div class="key" data-key="4"></div>
+                <div class="key" data-key="5"></div>
+                <div class="key" data-key="6"></div>
+                <div class="key" data-key="7"></div>
+                <div class="key" data-key="8"></div>
+                <div class="key" data-key="9"></div>
+                <div class="key" data-key="0"></div>
+                <div class="key" data-key="-"></div>
+                <div class="key" data-key="="></div>
+                <div class="key xxl" data-key="backspace"></div>
+                <div class="key" data-key="help">ins</div>
+                <div class="key" data-key="home"></div>
+                <!-- Second row -->
+                <div class="key large" data-key="tab"></div>
+                <div class="key" data-key="q"></div>
+                <div class="key" data-key="w"></div>
+                <div class="key" data-key="e"></div>
+                <div class="key" data-key="r"></div>
+                <div class="key" data-key="t"></div>
+                <div class="key" data-key="y"></div>
+                <div class="key" data-key="u"></div>
+                <div class="key" data-key="i"></div>
+                <div class="key" data-key="o"></div>
+                <div class="key" data-key="p"></div>
+                <div class="key" data-key="["></div>
+                <div class="key" data-key="]"></div>
+                <div class="key large" data-key="\"></div>
+                <div class="key" data-key="delete">del</div>
+                <div class="key" data-key="end"></div>
+                <!-- Third row -->
+                <div class="key xl" data-key="capslock">caps</div>
+                <div class="key" data-key="a"></div>
+                <div class="key" data-key="s"></div>
+                <div class="key" data-key="d"></div>
+                <div class="key" data-key="f"></div>
+                <div class="key" data-key="g"></div>
+                <div class="key" data-key="h"></div>
+                <div class="key" data-key="j"></div>
+                <div class="key" data-key="k"></div>
+                <div class="key" data-key="l"></div>
+                <div class="key" data-key=";"></div>
+                <div class="key" data-key="'"></div>
+                <div class="key xl" data-key="enter">return</div>
+                <div class="key" data-key="f15">pause</div>
+                <div class="key" data-key="pageup">pg up</div>
+                <!-- Fourth row -->
+                <div class="key xxl" data-key="shiftleft">shift</div>
+                <div class="key" data-key="z"></div>
+                <div class="key" data-key="x"></div>
+                <div class="key" data-key="c"></div>
+                <div class="key" data-key="v"></div>
+                <div class="key" data-key="b"></div>
+                <div class="key" data-key="n"></div>
+                <div class="key" data-key="m"></div>
+                <div class="key" data-key=","></div>
+                <div class="key" data-key="."></div>
+                <div class="key" data-key="/"></div>
+                <div class="key xxl" data-key="shiftright">shift</div>
+                <div class="key" data-key="arrowup">▲</div>
+                <div class="key" data-key="pagedown">pg dn</div>
+                <!-- Fifth row -->
+                <div class="key medium" data-key="controlleft">ctrl</div>
+                <div class="key medium" data-key="meta">win</div>
+                <div class="key medium" data-key="altleft">alt</div>
+                <div class="key huge" data-key=" "></div>
+                <div class="key medium" data-key="altright">alt</div>
+                <div class="key medium" data-key="fn"></div>
+                <div class="key medium" data-key="controlright">ctrl</div>
+                <div class="key" data-key="arrowleft">◀</div>
+                <div class="key" data-key="arrowdown">▼</div>
+                <div class="key" data-key="arrowright">▶</div>
+              </div>
+
+            <!--script>
+                var canvas, ctx;
+
+                window.addEventListener('load', () => {
+
+                    canvas = document.getElementById('canvas');
+                    ctx = canvas.getContext('2d');          
+                    resize(); 
+
+                    document.addEventListener('mousedown', startDrawing);
+                    document.addEventListener('mouseup', stopDrawing);
+                    document.addEventListener('mousemove', Draw);
+
+                    document.addEventListener('touchstart', startDrawing);
+                    document.addEventListener('touchend', stopDrawing);
+                    document.addEventListener('touchcancel', stopDrawing);
+                    document.addEventListener('touchmove', Draw);
+                    window.addEventListener('resize', resize);
+
+                    document.getElementById("x_coordinate").innerText = 0;
+                    document.getElementById("y_coordinate").innerText = 0;
+                    document.getElementById("speed").innerText = 0;
+                    document.getElementById("angle").innerText = 0;
+                });
+
+                var width, height, radius, x_orig, y_orig;
+                function resize() {
+                    width = window.innerWidth;
+                    radius = 100;
+                    height = radius * 6.5;
+                    ctx.canvas.width = width;
+                    ctx.canvas.height = height;
+                    background();
+                    joystick(width / 2, height / 3);
+                }
+
+                function background() {
+                    x_orig = width / 2;
+                    y_orig = height / 3;
+
+                    ctx.beginPath();
+                    ctx.arc(x_orig, y_orig, radius + 20, 0, Math.PI * 2, true);
+                    ctx.fillStyle = '#ECE5E5';
+                    ctx.fill();
+                }
+
+                function joystick(width, height) {
+                    ctx.beginPath();
+                    ctx.arc(width, height, radius, 0, Math.PI * 2, true);
+                    ctx.fillStyle = '#F08080';
+                    ctx.fill();
+                    ctx.strokeStyle = '#F6ABAB';
+                    ctx.lineWidth = 8;
+                    ctx.stroke();
+                }
+
+                let coord = { x: 0, y: 0 };
+                let paint = false;
+
+                function getPosition(event) {
+                    var mouse_x = event.clientX || event.touches[0].clientX;
+                    var mouse_y = event.clientY || event.touches[0].clientY;
+                    coord.x = mouse_x - canvas.offsetLeft;
+                    coord.y = mouse_y - canvas.offsetTop;
+                }
+
+                function is_it_in_the_circle() {
+                    var current_radius = Math.sqrt(Math.pow(coord.x - x_orig, 2) + Math.pow(coord.y - y_orig, 2));
+                    if (radius >= current_radius) return true
+                    else return false
+                }
+
+                function startDrawing(event) {
+                    paint = true;
+                    getPosition(event);
+                    if (is_it_in_the_circle()) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        background();
+                        joystick(coord.x, coord.y);
+                        Draw();
+                    }
+                }
+
+                function stopDrawing() {
+                    paint = false;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    background();
+                    joystick(width / 2, height / 3);
+                    document.getElementById("x_coordinate").innerText = 0;
+                    document.getElementById("y_coordinate").innerText = 0;
+                    document.getElementById("speed").innerText = 0;
+                    document.getElementById("angle").innerText = 0;
+
+                }
+
+                function Draw(event) {
+                    if (paint) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        background();
+                        var angle_in_degrees,x, y, speed;
+                        var angle = Math.atan2((coord.y - y_orig), (coord.x - x_orig));
+
+                        if (Math.sign(angle) == -1) {
+                            angle_in_degrees = Math.round(-angle * 180 / Math.PI);
+                        }
+                        else {
+                            angle_in_degrees =Math.round( 360 - angle * 180 / Math.PI);
+                        }
+
+
+                        if (is_it_in_the_circle()) {
+                            joystick(coord.x, coord.y);
+                            x = coord.x;
+                            y = coord.y;
+                        }
+                        else {
+                            x = radius * Math.cos(angle) + x_orig;
+                            y = radius * Math.sin(angle) + y_orig;
+                            joystick(x, y);
+                        }
+
+                        getPosition(event);
+
+                        var speed =  Math.round(100 * Math.sqrt(Math.pow(x - x_orig, 2) + Math.pow(y - y_orig, 2)) / radius);
+
+                        var x_relative = Math.round(x - x_orig);
+                        var y_relative = Math.round(y - y_orig);
+                        
+                        document.getElementById("x_coordinate").innerText =  x_relative;
+                        document.getElementById("y_coordinate").innerText =y_relative ;
+                        document.getElementById("speed").innerText = speed;
+                        document.getElementById("angle").innerText = angle_in_degrees;
+
+                        send( x_relative,y_relative,speed,angle_in_degrees);
+                    }
+                } 
+            </script-->
+            <script>
+                const keysArr = [...document.querySelectorAll(".key")];
+
+                const getKey = (event) => {
+                const parsedKey = event.key.toLowerCase().replace("\\", "\\\\");
+                const parsedCode = event.code.toLowerCase();
+                const element =
+                    document.querySelector(`[data-key="${parsedCode}"]`) ||
+                    document.querySelector(`[data-key="${parsedKey}"]`);
+
+                return element;
+                };
+
+                document.addEventListener("keydown", (event) => {
+                const key = getKey(event);
+                if (key) {
+                    key.classList.add("active");
+                }
+                });
+
+                document.addEventListener("keyup", (event) => {
+                const key = getKey(event);
+                if (key) {
+                    key.classList.remove("active");
+                }
+                });
+
+                document.addEventListener("mousedown", (event) => {
+                if (event.target.dataset.key) {
+                    event.target.classList.add("active");
+                }
+                });
+
+                document.addEventListener("mouseup", (event) => {
+                if (event.target.dataset.key) {
+                    event.target.classList.remove("active");
+                }
+                });
+
+                document.addEventListener("touchstart", (event) => {
+                if (event.target.dataset.key) {
+                    event.target.classList.add("active");
+                }
+                });
+
+                document.addEventListener("touchend", (event) => {
+                if (event.target.dataset.key) {
+                    event.target.classList.remove("active");
+                }
+                });
+
+                const animate = (element) => {
+                    const hueColor = Math.floor(10) + 0;
+                    const color = `hsla(${hueColor}, 100%, 50%, 50%)`;
+                    const textColor = `hsl(${hueColor}, 100%, 50%)`;
+                    const textShadow = `0 0 0.80em ${color}, 0 0 1.60em ${color}, 0 0 4em ${color}`;
+                    const boxShadow = `-3px 3px 4px ${color}, 3px -3px 4px ${color}, 3px 3px 4px ${color}, -3px -3px 4px ${color}, 0 0 10px ${color}`;
+
+                    const keyIndex = keysArr.indexOf(element);
+                    const animatedKeysRight = keysArr.slice(keyIndex);
+                    const animatedKeysLeft = keysArr.slice(0, keyIndex);
+
+                    const transitionHandler = (event) => {
+                        event.target.style.boxShadow = "none";
+                        event.target.style.color = null;
+                        event.target.style.textShadow = "none";
+                        event.target.removeEventListener("transitionend", transitionHandler);
+                    };
+
+                    setTimeout(() => {
+                        element.addEventListener("transitionend", transitionHandler);
+                        element.style.boxShadow = boxShadow;
+                        element.style.color = textColor;
+                        element.style.textShadow = textShadow;
+                    }, 0);                   
+                };
+
+                document.addEventListener("keydown", (event) => {
+                    const key = getKey(event);
+
+                    if (key) {
+                        animate(key);
+                    }
+                });
+                
+                document.addEventListener("click", (event) => {
+                    if (event.target.dataset.key) {
+                        animate(event.target);
+                    }
+                });
+
+                window.addEventListener("load", () => {
+                    const key = document.querySelector(`[data-key="enter"]`);
+                    animate(key);
+                });
+                
+            </script>
+        
+        </div>
+    </div>
+</body>
+
+{% endblock %}
