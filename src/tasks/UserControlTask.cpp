@@ -1,9 +1,6 @@
 #include "UserControlTask.hpp"
 
-#include <string>
-
-#include "../utils/timing.h"
-#include "../utils/container.h"
+using namespace sw::redis;
 
 using namespace tasks;
 
@@ -23,12 +20,20 @@ UserControlTask::UserControlTask(std::string task_name, SCHEDULE_POLICY policy, 
     createMsgQueue("/UserControlTask", msg_attr, msg_attr);
 };
 
+void UserControlTask::beforeTask(){
+    std::cout << REDIS_URI << std::endl;
+    std::cout << redis.ping() << std::endl;
+
+};
+
 void UserControlTask::runTask(){
-    //char in;
-    std::cout << "Enter input:"<< std::endl;
+
+    SPDLOG_INFO("Thrust: " + redis.get("thrust").value());
+    SPDLOG_INFO("Steering: " + redis.get("steering").value());
+
     //std::cin >> in;
     //std::cout << ">>>>> " << in << std::endl;
-}
+};
 
 
 void UserControlTask::afterTask(){

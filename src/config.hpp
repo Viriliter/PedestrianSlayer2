@@ -21,5 +21,9 @@
 //Task Message Queues
 #define MAX_MQ_MSG_SIZE 255  // Defines size of message queue in bytes
 
+//Redis
+#define REDIS_ADDR "127.0.0.1"
+#define REDIS_PORT "6379"
+#define REDIS_URI "tcp://" REDIS_ADDR ":" REDIS_PORT
 
 #endif  //CONFIG_HPP

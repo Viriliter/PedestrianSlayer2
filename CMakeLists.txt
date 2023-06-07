@@ -12,10 +12,21 @@ enable_testing()
 FIND_PACKAGE( OpenCV REQUIRED )  
 FIND_PACKAGE( Threads REQUIRED )
 FIND_PACKAGE( spdlog REQUIRED )
-FIND_LIBRARY( LIBRT rt ) 
+FIND_LIBRARY( libredis REQUIRED )
+FIND_LIBRARY( LIBRT rt )
 #FIND_PACKAGE(nlohmann_json REQUIRED)
 INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES( ${LIBSERIAL_INCLUDE_DIRS} )
+
+# <------------ add hiredis dependency --------------->
+FIND_PATH(HIREDIS_HEADER hiredis)
+FIND_LIBRARY(HIREDIS_LIB hiredis)
+
+# <------------ add redis-plus-plus dependency -------------->
+# NOTE: this should be *sw* NOT *redis++*
+FIND_PATH(REDIS_PLUS_PLUS_HEADER sw)
+FIND_LIBRARY(REDIS_PLUS_PLUS_LIB redis++)
+
 
 FIND_PACKAGE( PkgConfig )
 pkg_check_modules(SERIAL libserial)
@@ -34,19 +45,18 @@ list (REMOVE_DUPLICATES PedestrianSlayer2_INCLUDE_DIRS)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 add_compile_options(-pthread)
 
-#SET(CMAKE_CXX_STANDARD 17)
-add_executable(PedestrianSlayer2 ${PedestrianSlayer2_SOURCES})
-#target_compile_features(PedestrianSlayer2 PRIVATE cxx_std_17)
+add_executable(${CMAKE_PROJECT_NAME} ${PedestrianSlayer2_SOURCES})
+#target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
 
-target_include_directories(PedestrianSlayer2 PRIVATE ${PedestrianSlayer2_INCLUDE_DIRS})
-#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann/json.hpp)
-#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/json_fwd.hpp)
-#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann)
-#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson/simdjson.cpp)
-#target_include_directories(PedestrianSlayer2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson.h)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PedestrianSlayer2_INCLUDE_DIRS})
+#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann/json.hpp)
+#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/json_fwd.hpp)
+#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann)
+#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson/simdjson.cpp)
+#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson.h)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
-target_link_libraries(PedestrianSlayer2 ${OpenCV_LIBS} ${SERIAL_LDFLAGS} ${CMAKE_THREAD_LIBS_INIT} spdlog::spdlog ${LIBRT})
-target_include_directories(PedestrianSlayer2 PRIVATE ${SERIAL_INCLUDE_DIRS})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${OpenCV_LIBS} ${SERIAL_LDFLAGS} ${CMAKE_THREAD_LIBS_INIT} spdlog::spdlog ${LIBRT} ${HIREDIS_LIB} ${REDIS_PLUS_PLUS_LIB})
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${SERIAL_INCLUDE_DIRS} ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
