@@ -5,3 +5,7 @@ build/
 .vscode/
 .vs/
 
+server.crt
+server.csr
+server.key
+server.key.org
