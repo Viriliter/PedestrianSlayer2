@@ -2,74 +2,75 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+
 <style>
     .case {
-    background-color: #463973;
-    border-color: #2e2640;
-    border-radius: 5px;
-    border-style: solid;
-    border-width: 8px 10px 15px 10px;
-    display: inline-grid;
-    grid-template-columns: repeat(36, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-    height: 7em;
-    padding: 5px;
-    user-select: none;
-    width: 14.5em;
+        background-color: #463973;
+        border-color: #2e2640;
+        border-radius: 5px;
+        border-style: solid;
+        border-width: 8px 10px 15px 10px;
+        display: inline-grid;
+        grid-template-columns: repeat(36, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        height: 7em;
+        padding: 5px;
+        user-select: none;
+        width: 14.5em;
     }
 
     .key {
-    border-color: #382e59 #2e2640;
-    border-radius: 2px;
-    border-style: solid;
-    border-width: 3px 5px 8px 5px;
-    color: #bbadd9;
-    display: block;
-    font-family: sans-serif;
-    font-size: 9px;
-    font-weight: 800;
-    grid-column-end: span 2;
-    margin: 3px;
-    padding-top: 2px;
-    padding: 5px;
-    text-align: center;
-    text-transform: uppercase;
-    transition: all 50ms ease-out;
-    will-change: box-shadow, color, text-shadow;
+        border-color: #382e59 #2e2640;
+        border-radius: 2px;
+        border-style: solid;
+        border-width: 3px 5px 8px 5px;
+        color: #bbadd9;
+        display: block;
+        font-family: sans-serif;
+        font-size: 9px;
+        font-weight: 800;
+        grid-column-end: span 2;
+        margin: 3px;
+        padding-top: 2px;
+        padding: 5px;
+        text-align: center;
+        text-transform: uppercase;
+        transition: all 50ms ease-out;
+        will-change: box-shadow, color, text-shadow;
     }
 
-    .key:empty::before {
-    content: attr(data-key);
-    }
+        .key:empty::before {
+            content: attr(data-key);
+        }
 
     .active {
-    transform: perspective(1200px) translateZ(-90px);
+        transform: perspective(1200px) translateZ(-90px);
     }
 
     .medium {
-    grid-column-end: span 3;
+        grid-column-end: span 3;
     }
 
     .large {
-    grid-column-end: span 4;
+        grid-column-end: span 4;
     }
 
     .xl {
-    grid-column-end: span 5;
+        grid-column-end: span 5;
     }
 
     .xxl {
-    grid-column-end: span 6;
+        grid-column-end: span 6;
     }
 
     .xxxl {
-    grid-column-end: 7;
+        grid-column-end: 7;
     }
 
     .huge {
-    grid-column-end: span 12;
+        grid-column-end: span 12;
     }
-
 </style>
 
 <body>
@@ -77,67 +78,99 @@
         <div>
             <p class="header-text">DASHBOARD</p>
         </div>
-        <div class="row rounded_panel" style="height:500px; vertical-align: center; margin-left: auto; margin-right: auto;">
-            <p style="text-align: center;">
-                Thrust: <span id="thrust">0</span> |
-                Steer: <span id="steering">0</span>
-            </p>
-            <label class="flex items-center cursor-pointer" or="toggle-yworz7uajt">
-                <div class="relative">
-                    <input id="toggle-yworz7uajt" onclick="requestOrientationPermission()" type="checkbox" class="hidden">
-                    <div class="toggle__line w-10 h-4 bg-gray-400 rounded-full shadow-inner">
 
-                    </div>
-                    <div style="top:-.25rem;left:-.25rem;transition:all 0.3s ease-in-out" class="toggle__dot absolute w-6 h-6 bg-white rounded-full shadow inset-y-0 left-0">
-                    </div>
-                </div>
-                <div class="ml-3 text-gray-700">Show orientation angles</div>
-            </label>
-            
-            <p style="text-align: center;">
-                Alpha: <span id="orient_alpha">0</span> |
-                Beta: <span id="orient_beta">0</span> |
-                Gamma: <span id="orient_gamma">0</span>
-            </p>
+        <div class="row rounded_panel">
+            <div class="col" style="height: 100%; vertical-align:center; margin-left: auto margin-right: auto;">
+                <video id="video_cam" style="height: 100%; width:600px;max-width:100%;" controls autoplay name="media">
+                    <source src="test-0.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
 
-            <p style="text-align: center;">
-                Steering: <span id="orient_steering">0</span> |
-                Tilt: <span id="orient_tilt">0</span> |
-                Compass: <span id="orient_compass">0</span>
-            </p>
+        <div class="row rounded_panel">
+            <div class="col" style="height: 100%; vertical-align:center; margin-left: auto margin-right: auto;">
+                <p style="text-align: center;">
+                    Thrust: <span id="thrust">0</span> |
+                    Steer: <span id="steering">0</span>
+                </p>
 
-            <div class="case" style="margin-left: auto; margin-right: auto; align-content: center;">
-                <div class="col" style="width: 200px">
-                    <div class="row">
-                        <div class="col">
+                <label class="flex items-center cursor-pointer" or="toggle-yworz7uajt">
+                    <div class="relative">
+                        <input id="toggle-yworz7uajt" onclick="requestOrientationPermission()" type="checkbox" class="hidden">
+                        <div class="toggle__line w-10 h-4 bg-gray-400 rounded-full shadow-inner">
+
                         </div>
-                        <div class="col">
-                            <div class="col key" data-key="arrowup">▲</div>
-                        </div>
-                        <div class="col">
+                        <div style="top:-.25rem;left:-.25rem;transition:all 0.3s ease-in-out" class="toggle__dot absolute w-6 h-6 bg-white rounded-full shadow inset-y-0 left-0">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="key" data-key="arrowleft">◀</div>
+                    <div class="ml-3 text-gray-700">Enable control with device orientation</div>
+                </label>
+
+                <p style="text-align: center;">
+                    Alpha: <span id="orient_alpha">0</span> |
+                    Beta: <span id="orient_beta">0</span> |
+                    Gamma: <span id="orient_gamma">0</span>
+                </p>
+
+                <p style="text-align: center;">
+                    Steering: <span id="orient_steering">0</span> |
+                    Tilt: <span id="orient_tilt">0</span> |
+                    Compass: <span id="orient_compass">0</span>
+                </p>
+
+                <!--
+            <video id="live_cam"
+                   type="video/mp4"
+                   src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
+                   width="1280" height="720"
+                   autoplay
+                   loop
+                   controls>
+            </video>
+            -->
+
+                <div class="case" style="margin-left: auto; margin-right: auto; align-content: center;">
+                    <div class="col" style="width: 200px">
+                        <div class="row">
+                            <div class="col">
+                            </div>
+                            <div class="col">
+                                <div class="col key" data-key="arrowup">▲</div>
+                            </div>
+                            <div class="col">
+                            </div>
                         </div>
-                        <div class="col">
-                            <div class="key" data-key="arrowdown">▼</div>
-                        </div>
-                        <div class="col">
-                            <div class="key" data-key="arrowright">▶</div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="key" data-key="arrowleft">◀</div>
+                            </div>
+                            <div class="col">
+                                <div class="key" data-key="arrowdown">▼</div>
+                            </div>
+                            <div class="col">
+                                <div class="key" data-key="arrowright">▶</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <script>
-                let thrust = 0;
-                let steering = 0;
-                
-                const keysArr = [...document.querySelectorAll(".key")];
+        <div class="row rounded_panel">
+            <div class="col" style="height: 100%; vertical-align:center; margin-left: auto margin-right: auto;">
 
-                const getKey = (event) => {
+                <div id="rover-map" style="width:100%; height:600px;"></div>
+            </div>
+
+        </div>
+
+        <script>
+            let thrust = 0;
+            let steering = 0;
+
+            const keysArr = [...document.querySelectorAll(".key")];
+
+            const getKey = (event) => {
                 const parsedKey = event.key.toLowerCase().replace("\\", "\\\\");
                 const parsedCode = event.code.toLowerCase();
                 const element =
@@ -145,184 +178,215 @@
                     document.querySelector(`[data-key="${parsedKey}"]`);
 
                 return element;
-                };
+            };
 
-                document.addEventListener("keydown", (event) => {
+            document.addEventListener("keydown", (event) => {
                 const key = getKey(event);
                 if (key) {
                     key.classList.add("active");
                 }
-                });
+            });
 
-                document.addEventListener("keyup", (event) => {
+            document.addEventListener("keyup", (event) => {
                 const key = getKey(event);
                 if (key) {
                     key.classList.remove("active");
                 }
-                });
+            });
 
-                document.addEventListener("mousedown", (event) => {
+            document.addEventListener("mousedown", (event) => {
                 if (event.target.dataset.key) {
                     event.target.classList.add("active");
                 }
-                });
+            });
 
-                document.addEventListener("mouseup", (event) => {
+            document.addEventListener("mouseup", (event) => {
                 if (event.target.dataset.key) {
                     event.target.classList.remove("active");
                 }
-                });
+            });
 
-                document.addEventListener("touchstart", (event) => {
+            document.addEventListener("touchstart", (event) => {
                 if (event.target.dataset.key) {
                     event.target.classList.add("active");
                 }
-                });
+            });
 
-                document.addEventListener("touchend", (event) => {
+            document.addEventListener("touchend", (event) => {
                 if (event.target.dataset.key) {
                     event.target.classList.remove("active");
                 }
-                });
+            });
 
-                const animate = (element) => {
-                    const hueColor = Math.floor(10) + 0;
-                    const color = `hsla(${hueColor}, 100%, 50%, 50%)`;
-                    const textColor = `hsl(${hueColor}, 100%, 50%)`;
-                    const textShadow = `0 0 0.80em ${color}, 0 0 1.60em ${color}, 0 0 4em ${color}`;
-                    const boxShadow = `-3px 3px 4px ${color}, 3px -3px 4px ${color}, 3px 3px 4px ${color}, -3px -3px 4px ${color}, 0 0 10px ${color}`;
+            const animate = (element) => {
+                const hueColor = Math.floor(10) + 0;
+                const color = `hsla(${hueColor}, 100%, 50%, 50%)`;
+                const textColor = `hsl(${hueColor}, 100%, 50%)`;
+                const textShadow = `0 0 0.80em ${color}, 0 0 1.60em ${color}, 0 0 4em ${color}`;
+                const boxShadow = `-3px 3px 4px ${color}, 3px -3px 4px ${color}, 3px 3px 4px ${color}, -3px -3px 4px ${color}, 0 0 10px ${color}`;
 
-                    const keyIndex = keysArr.indexOf(element);
-                    const animatedKeysRight = keysArr.slice(keyIndex);
-                    const animatedKeysLeft = keysArr.slice(0, keyIndex);
+                const keyIndex = keysArr.indexOf(element);
+                const animatedKeysRight = keysArr.slice(keyIndex);
+                const animatedKeysLeft = keysArr.slice(0, keyIndex);
 
-                    const transitionHandler = (event) => {
-                        event.target.style.boxShadow = "none";
-                        event.target.style.color = null;
-                        event.target.style.textShadow = "none";
-                        event.target.removeEventListener("transitionend", transitionHandler);
-                    };
+                const transitionHandler = (event) => {
+                    if (event == null) return;
 
-                    setTimeout(() => {
-                        element.addEventListener("transitionend", transitionHandler);
-                        element.style.boxShadow = boxShadow;
-                        element.style.color = textColor;
-                        element.style.textShadow = textShadow;
-                    }, 0);                   
+                    event.target.style.boxShadow = "none";
+                    event.target.style.color = null;
+                    event.target.style.textShadow = "none";
+                    event.target.removeEventListener("transitionend", transitionHandler);
                 };
 
-                document.addEventListener("keydown", (event) => {
-                    const key = getKey(event);
-                    if (key) {
-                        animate(key);
-                        if (key == document.querySelector(`[data-key="arrowup"]`)){
-                            thrust = Math.min(thrust+10, 100);
-                        }
-                        if (key == document.querySelector(`[data-key="arrowdown"]`)){
-                            thrust = Math.max(thrust-10, -100);
-                        }
-                        if (key == document.querySelector(`[data-key="arrowleft"]`)){
-                            steering = Math.max(steering-10, -100);
-                        }   
-                        if (key == document.querySelector(`[data-key="arrowright"]`)){
-                            steering = Math.min(steering+10, 100);
-                        }
+                setTimeout(() => {
+                    if (element == null) return;
 
-                        document.getElementById("thrust").innerText = thrust;
-                        document.getElementById("steering").innerText = steering;
-                        const request = new XMLHttpRequest()
-                        request.open('POST',  `/rover_control/${JSON.stringify(thrust)}_${JSON.stringify(steering)}`)
-                        request.send();
-                    }
-                });
-                
-                document.addEventListener("click", (event) => {
-                    if (event.target.dataset.key) {
-                        animate(event.target);
-                    }
-                });
+                    element.addEventListener("transitionend", transitionHandler);
+                    element.style.boxShadow = boxShadow;
+                    element.style.color = textColor;
+                    element.style.textShadow = textShadow;
+                }, 0);
+            };
 
-                window.addEventListener("load", () => {
-                    const key = document.querySelector(`[data-key="enter"]`);
+            document.addEventListener("keydown", (event) => {
+                const key = getKey(event);
+                if (key) {
                     animate(key);
-                });
-
-                window.addEventListener('deviceorientation', handleOrientation);
-                    function handleOrientation(event) {
-                    const alpha = event.alpha;
-                    const beta = event.beta;
-                    const gamma = event.gamma;
-
-                    document.getElementById("orient_alpha").innerText = alpha.toFixed(2);
-                    document.getElementById("orient_beta").innerText = beta.toFixed(2);
-                    document.getElementById("orient_gamma").innerText = gamma.toFixed(2);
-
-                    var rotation = getEulerAngles(getRotationMatrix(alpha, beta, gamma));
-                    document.getElementById("orient_steering").innerText = rotation[0].toFixed(2);
-                    document.getElementById("orient_tilt").innerText = rotation[1].toFixed(2);
-                    document.getElementById("orient_compass").innerText = rotation[2].toFixed(2);
-
-                };
-
-                window.addEventListener("orientationchange", function() {
-                    const orientation = screen.orientation.angle; // current screen orientation
-                    alert("orientation has been changed")
-                });
-
-                window.addEventListener("compassneedscalibration", function() {
-                    alert("Compass needs calibration. Please rotate.");
-                });
-                
-                function getRotationMatrix( alpha, beta, gamma ) {
-                    const degtorad = Math.PI / 180; // Degree-to-Radian conversion
-                    var cX = Math.cos( beta  * degtorad );
-                    var cY = Math.cos( gamma * degtorad );
-                    var cZ = Math.cos( alpha * degtorad );
-                    var sX = Math.sin( beta  * degtorad );
-                    var sY = Math.sin( gamma * degtorad );
-                    var sZ = Math.sin( alpha * degtorad );
-
-                    var m11 = cZ * cY - sZ * sX * sY;
-                    var m12 = - cX * sZ;
-                    var m13 = cY * sZ * sX + cZ * sY;
-
-                    var m21 = cY * sZ + cZ * sX * sY;
-                    var m22 = cZ * cX;
-                    var m23 = sZ * sY - cZ * cY * sX;
-
-                    var m31 = - cX * sY;
-                    var m32 = sX;
-                    var m33 = cX * cY;
-
-                    return [
-                        m13, m11, m12,
-                        m23, m21, m22,
-                        m33, m31, m32
-                    ];
-                };
-
-                function getEulerAngles( matrix ) {
-                    var radtodeg = 180 / Math.PI; // Radian-to-Degree conversion
-                    var sy = Math.sqrt(matrix[0] * matrix[0] +  matrix[3] * matrix[3] );
-                
-                    var singular = sy < 1e-6; // If
-                
-                    if (!singular) {
-                        var x = Math.atan2(matrix[7] , matrix[8]);
-                        var y = Math.atan2(-matrix[6], sy);
-                        var z = Math.atan2(matrix[3], matrix[0]);
-                    } else {
-                        var x = Math.atan2(-matrix[5], matrix[4]);
-                        var y = Math.atan2(-matrix[6], sy);
-                        var z = 0;
+                    if (key == document.querySelector(`[data-key="arrowup"]`)) {
+                        thrust = Math.min(thrust + 10, 100);
                     }
-                    return [radtodeg * x, radtodeg * y, radtodeg * z];
-                };
-                
-                /*
-                function requestOrientationPermission(){
-                    console.log(0)
-                    DeviceOrientationEvent.requestPermission()
+                    if (key == document.querySelector(`[data-key="arrowdown"]`)) {
+                        thrust = Math.max(thrust - 10, -100);
+                    }
+                    if (key == document.querySelector(`[data-key="arrowleft"]`)) {
+                        steering = Math.max(steering - 10, -100);
+                    }
+                    if (key == document.querySelector(`[data-key="arrowright"]`)) {
+                        steering = Math.min(steering + 10, 100);
+                    }
+
+                    document.getElementById("thrust").innerText = thrust;
+                    document.getElementById("steering").innerText = steering;
+                    const request = new XMLHttpRequest()
+                    request.open('POST', `/rover_control/${JSON.stringify(thrust)}_${JSON.stringify(steering)}`)
+                    request.send();
+                }
+            });
+
+            document.addEventListener("click", (event) => {
+                if (event.target.dataset.key) {
+                    animate(event.target);
+                }
+            });
+
+            window.addEventListener("load", () => {
+                const key = document.querySelector(`[data-key="enter"]`);
+                animate(key);
+            });
+
+            window.addEventListener('deviceorientation', handleOrientation);
+            function handleOrientation(event) {
+                const alpha = event.alpha;
+                const beta = event.beta;
+                const gamma = event.gamma;
+
+                if (alpha == null && beta == null && gamma == null)
+                    return
+
+                document.getElementById("orient_alpha").innerText = alpha.toFixed(2);
+                document.getElementById("orient_beta").innerText = beta.toFixed(2);
+                document.getElementById("orient_gamma").innerText = gamma.toFixed(2);
+
+                var rotation = getEulerAngles(getRotationMatrix(alpha, beta, gamma));
+                var steering = rotation[0];
+                var tilt = rotation[1];
+                var compass = rotation[2];
+                document.getElementById("orient_steering").innerText = steering.toFixed(2);
+                document.getElementById("orient_tilt").innerText = tilt.toFixed(2);
+                document.getElementById("orient_compass").innerText = compass.toFixed(2);
+
+                var scaledThrust = convertRange(Math.min(Math.max(tilt, -90), 90), [90, -90], [-100, 100]);
+                var scaledSteering = convertRange(Math.min(Math.max(tilt, 0), 180), [180, 0], [-100, 100]);
+
+                document.getElementById("thrust").innerText = scaledThrust;
+                document.getElementById("steering").innerText = scaledSteering;
+
+                const request = new XMLHttpRequest()
+                request.open('POST', `/rover_control/${JSON.stringify(scaledThrust)}_${JSON.stringify(scaledSteering)}`)
+                request.send();
+
+            };
+
+            window.addEventListener("orientationchange", function () {
+                const orientation = screen.orientation.angle; // current screen orientation
+                alert("orientation has been changed")
+            });
+
+            window.addEventListener("compassneedscalibration", function () {
+                alert("Compass needs calibration. Please rotate.");
+            });
+
+            function getRotationMatrix(alpha, beta, gamma) {
+                const degtorad = Math.PI / 180; // Degree-to-Radian conversion
+                var cX = Math.cos(beta * degtorad);
+                var cY = Math.cos(gamma * degtorad);
+                var cZ = Math.cos(alpha * degtorad);
+                var sX = Math.sin(beta * degtorad);
+                var sY = Math.sin(gamma * degtorad);
+                var sZ = Math.sin(alpha * degtorad);
+
+                var m11 = cZ * cY - sZ * sX * sY;
+                var m12 = - cX * sZ;
+                var m13 = cY * sZ * sX + cZ * sY;
+
+                var m21 = cY * sZ + cZ * sX * sY;
+                var m22 = cZ * cX;
+                var m23 = sZ * sY - cZ * cY * sX;
+
+                var m31 = - cX * sY;
+                var m32 = sX;
+                var m33 = cX * cY;
+
+                return [
+                    m13, m11, m12,
+                    m23, m21, m22,
+                    m33, m31, m32
+                ];
+            };
+
+            function getEulerAngles(matrix) {
+                var radtodeg = 180 / Math.PI; // Radian-to-Degree conversion
+                var sy = Math.sqrt(matrix[0] * matrix[0] + matrix[3] * matrix[3]);
+
+                var singular = sy < 1e-6; // If
+
+                if (!singular) {
+                    var x = Math.atan2(matrix[7], matrix[8]);
+                    var y = Math.atan2(-matrix[6], sy);
+                    var z = Math.atan2(matrix[3], matrix[0]);
+                } else {
+                    var x = Math.atan2(-matrix[5], matrix[4]);
+                    var y = Math.atan2(-matrix[6], sy);
+                    var z = 0;
+                }
+                return [radtodeg * x, radtodeg * y, radtodeg * z];
+            };
+
+            function convertRange(value, r1, r2) {
+                return (value - r1[0]) * (r2[1] - r2[0]) / (r1[1] - r1[0]) + r2[0];
+            }
+
+
+            function requestOrientationPermission() {
+                console.log(0)
+                // Note that DeviceMotionEvent is mobile functionality,
+                // so it will not work for desktop browsers
+                if (typeof DeviceMotionEvent.requestPermission !== 'function') {
+                    console.error("Browser has not got orientation sensor support!")
+                    return;
+                }
+
+                DeviceOrientationEvent.requestPermission()
                     .then(response => {
                         console.log(1)
                         if (response == 'granted') {
@@ -339,11 +403,38 @@
                         console.log(2)
                     })
                     .catch(console.error)
-                }*/
-            </script>
-        
-        </div>
-    </div>
+            }
+        </script>
+
+        <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+
+        <script>
+            // Creating map options
+            var mapOptions = {
+                center: [0, 0],
+                zoom: 12
+            }
+
+            // Creating a map object
+            var map = new L.map('rover-map', mapOptions);
+
+            // Creating a Layer object
+            var layer = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+            // Adding layer to the map
+            map.addLayer(layer);
+        </script>
+
+        <!--script>
+        const videoTag = document.getElementById("live_cam");
+
+        // creating the MediaSource, just with the "new" keyword, and the URL for it
+        const myMediaSource = new MediaSource();
+        const url = URL.createObjectURL(myMediaSource);
+
+        // attaching the MediaSource to the video tag
+        videoTag.src = url;
+    </script-->
 </body>
 
 {% endblock %}

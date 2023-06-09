@@ -1,12 +1,16 @@
+import os
+import sys
 import json
-import datetime
 
 from flask import Flask, render_template, request, url_for, flash, redirect, jsonify
 from werkzeug.exceptions import abort
 
 import redis
 redis_conn = redis.Redis()
-print(redis_conn.ping())
+try:
+    IS_REDIS_CONNECTED = redis_conn.ping()
+except:
+    IS_REDIS_CONNECTED = False
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "admin"
@@ -19,8 +23,10 @@ def index():
 def rover_control(thrust, steering):
     thrust = json.loads(thrust)
     steering = json.loads(steering)
+    print (thrust, steering)
 
-    redis_conn.mset({"thrust": thrust, "steering": steering})
+    if IS_REDIS_CONNECTED:
+        redis_conn.mset({"thrust": thrust, "steering": steering})
     return ('/')
 
 @app.route("/settings")
@@ -43,4 +49,8 @@ if __name__ == "__main__":
     # 2- Include .crt and .key files into the project folder:
     
     context = ('server.crt', 'server.key')  # certificate and key files
-    app.run(host="0.0.0.0", debug=True, ssl_context=context)
+
+    if os.path.exists(context[0]) and os.path.exists(context[1]):
+        app.run(host="0.0.0.0", debug=True, ssl_context=context)
+    else:
+        app.run(host="0.0.0.0", debug=True)
