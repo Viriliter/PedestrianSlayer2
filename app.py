@@ -2,7 +2,8 @@ import os
 import sys
 import json
 
-from flask import Flask, render_template, request, url_for, flash, redirect, jsonify
+import cv2
+from flask import Flask, render_template, Response, request, url_for, flash, redirect, jsonify
 from werkzeug.exceptions import abort
 
 import redis
@@ -14,6 +15,9 @@ except:
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "admin"
+
+capture = cv2.VideoCapture("/home/linux/Videos/test-0.mp4")
+
 
 @app.route("/")
 def index():
@@ -37,6 +41,25 @@ def settings():
 def about():
     return render_template('about.html')
 
+def gen_frames():
+    global capture
+    while True:
+        success, frame = capture.read()
+        if not success:
+            capture = cv2.VideoCapture("/home/linux/Videos/test-0.mp4")
+            break
+        else:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+
+@app.route('/video_feed')
+def video_feed():
+    cv2.waitKey(100)
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
 if __name__ == "__main__":
     # TODO orientation info of mobile device is only obtained with https path so ssl certificate is needed.
     # You need to generate ssl certificate prior to run the project. Apply following steps:
@@ -53,4 +76,4 @@ if __name__ == "__main__":
     if os.path.exists(context[0]) and os.path.exists(context[1]):
         app.run(host="0.0.0.0", debug=True, ssl_context=context)
     else:
-        app.run(host="0.0.0.0", debug=True)
+        app.run(host="0.0.0.0", debug=True,  ssl_context="adhoc")
