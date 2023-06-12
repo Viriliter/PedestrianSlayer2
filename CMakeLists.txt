@@ -12,9 +12,8 @@ enable_testing()
 FIND_PACKAGE( OpenCV REQUIRED )  
 FIND_PACKAGE( Threads REQUIRED )
 FIND_PACKAGE( spdlog REQUIRED )
-FIND_LIBRARY( libredis REQUIRED )
 FIND_LIBRARY( LIBRT rt )
-#FIND_PACKAGE(nlohmann_json REQUIRED)
+
 INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES( ${LIBSERIAL_INCLUDE_DIRS} )
 
@@ -46,14 +45,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 add_compile_options(-pthread)
 
 add_executable(${CMAKE_PROJECT_NAME} ${PedestrianSlayer2_SOURCES})
-#target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PedestrianSlayer2_INCLUDE_DIRS})
-#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann/json.hpp)
-#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/json_fwd.hpp)
-#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/nlohmann)
-#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson/simdjson.cpp)
-#target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third-party/simdjson.h)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
