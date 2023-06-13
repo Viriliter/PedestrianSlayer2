@@ -28,8 +28,8 @@ void UserControlTask::beforeTask(){
 
 void UserControlTask::runTask(){
 
-    SPDLOG_INFO("Thrust: " + redis.get("thrust").value());
-    SPDLOG_INFO("Steering: " + redis.get("steering").value());
+    //SPDLOG_INFO("Thrust: " + redis.get("thrust").value());
+    //SPDLOG_INFO("Steering: " + redis.get("steering").value());
 
     //std::cin >> in;
     //std::cout << ">>>>> " << in << std::endl;

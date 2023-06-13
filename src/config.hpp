@@ -14,7 +14,7 @@
 
 
 // Communication Parameters
-#define SLAVE_PORTNAME "/dev/ttyUSB0"
+#define SLAVE_PORTNAME "/dev/ttyUSB1"
 #define SLAVE_BAUD 115200
 #define SLAVE_CON_TIMEOUT 100  // Timeout duration in miliseconds
 

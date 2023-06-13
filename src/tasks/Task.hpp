@@ -180,13 +180,13 @@ namespace tasks{
     
         bool createMsgQueue(const char *msgQueueName, mq_attr _attr_in, mq_attr _attr_out){
             size_t lenQueueName = strlen(msgQueueName);
-            char *msgQueueNameIn = new char[lenQueueName+3];
+            char *msgQueueNameIn = new char[lenQueueName+4];
             char *msgQueueNameOut = new char[lenQueueName+4];
             std::strcpy(msgQueueNameIn, msgQueueName);
             std::strcat(msgQueueNameIn, "_in");
             std::strcpy(msgQueueNameOut, msgQueueName);
             std::strcat(msgQueueNameOut, "_out");
-            mq_port_in = mq_open(msgQueueNameIn, O_CREAT|O_RDWR, 0744, &_attr_in);
+            mq_port_in = mq_open(msgQueueNameIn, O_CREAT|O_RDWR|O_NONBLOCK, 0744, &_attr_in);
             mq_port_out = mq_open(msgQueueNameOut, O_CREAT|O_RDWR|O_NONBLOCK, 0744, &_attr_out);
             delete[] msgQueueNameIn;
             delete[] msgQueueNameOut;
@@ -198,6 +198,13 @@ namespace tasks{
                 std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue(in)"<< std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }*/
+            if (mq_port_in != 3){
+                int errvalue = errno;
+                std::string nn;
+                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue - " << nn << std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+            }
             if (mq_port_out != 3){
                 int errvalue = errno;
                 std::string nn;
@@ -205,8 +212,7 @@ namespace tasks{
                 std::cout << "The error generated was " << std::to_string(errvalue) << " in createMsgQueue - " << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
-
-            return (bool) /*(mq_port_in == 3) &&*/ (mq_port_out == 3);
+            return (bool) (mq_port_in == 3) && (mq_port_out == 3);
         };
 
         uint16_t readMsgQueue(const char *msgQueueName, char *queue){
@@ -221,6 +227,12 @@ namespace tasks{
             if (mq_attr_.mq_curmsgs<=0) return 0;
 
             size_t ret_rec = mq_receive(mqd_t, queue, MAX_MQ_MSG_SIZE+1, NULL);
+            /*
+            struct timespec tm;
+            clock_gettime(CLOCK_REALTIME, &tm);
+            tm.tv_nsec += 1*1000000;  // Set for 1 miliseconds
+            size_t ret_rec = mq_timedreceive(mqd_t, queue, MAX_MQ_MSG_SIZE+1, NULL, &tm);
+            */
 
             if (ret_rec < 2){
                 int errvalue = errno;
@@ -575,7 +587,7 @@ namespace tasks{
             busy_wait_latency_tracker_.DumpToLogger();
         };
 
-        virtual bool runTask(int64_t ellapsed_ns) noexcept {};
+        virtual bool runTask(int64_t ellapsed_ns) noexcept { return true;};
 
         virtual void run() noexcept final {
             taskStatus(TASK_STATUS::RUNNING_TASK);

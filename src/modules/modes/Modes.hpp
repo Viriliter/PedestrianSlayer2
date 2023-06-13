@@ -2,7 +2,7 @@
 #define MODE_HPP
 
 #include "../../config.hpp"
-#include "../../modules/communication/messages/Message.hpp"
+#include "../../modules/communication/Message.hpp"
 #include "../../utils/container.h"
 #include "../../utils/types.h"
 

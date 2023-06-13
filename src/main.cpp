@@ -24,6 +24,10 @@ void signal_callback_handler(int signum){
 int main(){
     signal(SIGINT, signal_callback_handler);
     int heap_size_ = 5;
+
+
+
+    SPDLOG_INFO(__cplusplus);
     SPDLOG_INFO("Starting application...");
 
     //spdlog::info("Welcome to spdlog version {}.{}.{}  !", SPDLOG_VER_MAJOR, SPDLOG_VER_MINOR, SPDLOG_VER_PATCH);

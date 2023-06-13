@@ -174,16 +174,22 @@ void SlaveCommunicationTask::runTask(){
 
         //Send serial messages
         try{
-            char queue[MAX_MQ_MSG_SIZE+1];
-            UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_in", queue);
-            if (queueSize>0){
-                // Start from index 2 since first two bytes are length of queue message
-                comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue+2, queueSize);
-                auto tx_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
-                for (auto const &tx_byte: tx_bytes){
-                    serialPort->Write(tx_bytes);
+            while (true){
+                char queue_slave_comm_in[MAX_MQ_MSG_SIZE+1];
+                UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_in", queue_slave_comm_in);
+                if (queueSize>0){
+                    // Start from index 2 since first two bytes are length of queue message
+                    comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_slave_comm_in+2, queueSize);
+                    auto tx_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
+                    std::cout << "Send tx: ";
+                    for (auto const &tx_byte: tx_bytes){
+                        std::cout << std::to_string(tx_byte) << " ";
+                        serialPort->Write(tx_bytes);
+                    }
+                    std::cout << std::endl;
+                    serialPort->FlushOutputBuffer();
                 }
-                serialPort->FlushOutputBuffer();
+                else break;
             }
         }
         catch (std::exception &err){

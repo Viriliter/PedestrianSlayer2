@@ -7,7 +7,8 @@
 #include <libserial/SerialStream.h>
 
 #include "../config.hpp"
-#include "../modules/communication/messages/Message.hpp"
+#include "../modules/communication/Message.hpp"
+#include "../modules/communication/IPCMessage.hpp"
 #include "../utils/timing.h"
 #include "../utils/container.h"
 #include "../utils/types.h"
