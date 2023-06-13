@@ -292,7 +292,7 @@
             if (key) {
                 animate(key);
                 if (key == document.querySelector(`[data-key="arrowup"]`)) {
-                    thrust = Math.max(thrust + 10, 100);
+                    thrust = Math.min(thrust + 10, 100);
                 }
                 if (key == document.querySelector(`[data-key="arrowdown"]`)) {
                     thrust = Math.max(thrust - 10, -100);
