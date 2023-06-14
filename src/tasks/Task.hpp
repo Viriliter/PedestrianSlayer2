@@ -26,6 +26,8 @@
 #include "../config.hpp"
 #include "../utils/types.h"
 
+const unsigned int MAX_RECURSION_LIMIT = 100;
+
 namespace tasks{
     enum SCHEDULE_POLICY{
         DEADLINE,
@@ -69,6 +71,7 @@ namespace tasks{
         std::string task_name_ = "";
         SCHEDULE_POLICY policy_;
         TASK_STATUS taskStatus_ = TASK_STATUS::IDLE_TASK;  // Define task status as idle at first
+        static unsigned int CurrentRecursionDepth;
 
     protected:
         std::vector<size_t> cpu_affinity_;
@@ -218,15 +221,15 @@ namespace tasks{
         uint16_t readMsgQueue(const char *msgQueueName, char *queue){
             uint16_t queueSize = 0;
             mq_attr mq_attr_;
-            mqd_t mqd_t = mq_open(msgQueueName, O_RDONLY);
+            mqd_t mqd_t_ = mq_open(msgQueueName, O_RDONLY|O_NONBLOCK);
             
-            if (mq_getattr(mqd_t, &mq_attr_) == -1)
+            if (mq_getattr(mqd_t_, &mq_attr_) == -1)
                 return 0;
             
             // Check whether there is any available message in the queue
             if (mq_attr_.mq_curmsgs<=0) return 0;
 
-            size_t ret_rec = mq_receive(mqd_t, queue, MAX_MQ_MSG_SIZE+1, NULL);
+            size_t ret_rec = mq_receive(mqd_t_, queue, MAX_MQ_MSG_SIZE+1, NULL);
             /*
             struct timespec tm;
             clock_gettime(CLOCK_REALTIME, &tm);
@@ -248,9 +251,9 @@ namespace tasks{
 
             return queueSize;
         };
-
+        /*
         bool writeMsgQueue(const char *msgQueueName, char *queue, uint64_t queueSize){
-            mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
+            mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY|O_NONBLOCK);
             // TODO send message to the queue according to task priority              
             if (queueSize > MAX_MQ_MSG_SIZE) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
 
@@ -268,17 +271,20 @@ namespace tasks{
                 int errvalue = errno;
                 std::string nn;
                 for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
-                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue0" << nn << std::endl;
                 std::cout << "That means: " << strerror( errvalue ) << std::endl;
             }
             delete[] buf;
 
             return (bool) (ret_rec==0);
         };
-
+        */
         template<typename T>
         bool writeMsgQueue(const char *msgQueueName, std::vector<T> &queue, uint64_t queueSize){
-            mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY);
+            CurrentRecursionDepth++;
+            if (CurrentRecursionDepth > MAX_RECURSION_LIMIT) return false;
+
+            mqd_t mqd_t_ = mq_open(msgQueueName, O_WRONLY|O_NONBLOCK);
             // TODO send message to the queue according to task priority              
             if (queueSize > MAX_MQ_MSG_SIZE) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
 
@@ -291,15 +297,27 @@ namespace tasks{
                 buf[i+2] = queue[i];
             }
 
-            int ret_rec = mq_send(mqd_t, buf, MAX_MQ_MSG_SIZE, 0);
+            int ret_rec = mq_send(mqd_t_, buf, MAX_MQ_MSG_SIZE, 0);
+            delete[] buf;
+            
             if (ret_rec==-1){
                 int errvalue = errno;
-                std::string nn;
-                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
-                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
-                std::cout << "That means: " << strerror( errvalue ) << std::endl;
+                if (errvalue==EAGAIN){  // Resource temporarily unavailable (Occurs when queue reaches max size)
+                    // Erase a message by reading from queue
+                    char *temp = new char[MAX_MQ_MSG_SIZE];
+                    mqd_t mqd_temp = mq_open(msgQueueName, O_RDONLY|O_NONBLOCK);
+                    mq_receive(mqd_temp, temp, MAX_MQ_MSG_SIZE+1, NULL);
+                    delete[] temp;
+                    // Try to write again
+                    writeMsgQueue(msgQueueName, queue, queueSize);
+                }
+                else {
+                    std::string nn;
+                    for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                    std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
+                    std::cout << "That means: " << strerror( errvalue ) << std::endl;
+                }
             }
-            delete[] buf;
 
             return (bool) (ret_rec==0);
         };

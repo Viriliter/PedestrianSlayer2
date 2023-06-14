@@ -21,7 +21,6 @@ SlaveCommunicationTask::SlaveCommunicationTask(std::string task_name, SCHEDULE_P
         break;
     };
     
-
     mq_attr msg_attr;
 
     msg_attr.mq_flags = 0;
@@ -145,6 +144,7 @@ void SlaveCommunicationTask::runTask(){
         try
         {
             int available_byte_count = serialPort->GetNumberOfBytesAvailable();
+
             for (size_t i = 0; i < available_byte_count; i++)
             {
                 char rx_byte;
@@ -157,7 +157,10 @@ void SlaveCommunicationTask::runTask(){
             if (pair.second.MsgSize>0){
                   // Create a posix message to send to message queue
                 std::vector<UINT8> rxMsg = pair.second.toVector();
-
+                for (auto const &tx_byte: rxMsg){
+                    std::cout << ", " << std::to_string(tx_byte) << " ";
+                }
+                std::cout << std::endl;
                 // Create IPC message for posix queue
                 comm::ipc::PayloadType in_payload;
                 comm::ipc::insert_package<std::vector<UINT8>>(in_payload, "Raw", rxMsg);
@@ -173,6 +176,7 @@ void SlaveCommunicationTask::runTask(){
         }
 
         //Send serial messages
+        /*
         try{
             while (true){
                 char queue_slave_comm_in[MAX_MQ_MSG_SIZE+1];
@@ -195,6 +199,7 @@ void SlaveCommunicationTask::runTask(){
         catch (std::exception &err){
             err.what();
         }
+        */
 
         //timing::sleep(100, timing::timeFormat::formatMiliseconds);
     }
