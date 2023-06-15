@@ -16,21 +16,49 @@ except:
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "admin"
 
-capture = cv2.VideoCapture("/home/linux/Videos/test-0.mp4")
+capture = cv2.VideoCapture("./templates/test-0.mp4")
 
 
 @app.route("/")
 def index():
     return render_template('index.html')
 
-@app.route("/rover_control/<string:thrust>_<string:steering>", methods=["POST"])
-def rover_control(thrust, steering):
-    thrust = json.loads(thrust)
-    steering = json.loads(steering)
-    print (thrust, steering)
+@app.route("/rover_control", methods=["POST"])
+def rover_control():
+    jdata = request.json
+    thrust = jdata.get("thrust")
+    steering = jdata.get("steering")
+    print ("Thrust:", thrust, "Steering:", steering)
 
     if IS_REDIS_CONNECTED:
         redis_conn.mset({"thrust": thrust, "steering": steering})
+    return ('/')
+
+@app.route("/rover_control_start_stop", methods=["POST"])
+def rover_control_start_stop():
+    jdata = request.json
+    isRoverStopped = jdata.get("isRoverStopped")
+    print("isRoverStopped?", isRoverStopped)
+    if IS_REDIS_CONNECTED:
+        redis_conn.mset({"isRoverStopped": isRoverStopped})
+    return ('/')
+
+@app.route("/rover_control_light", methods=["POST"])
+def rover_control_light():
+    jdata = request.json
+    isLightOn = jdata.get("isLightOn")
+    print("isLightOn?", isLightOn)
+    if IS_REDIS_CONNECTED:
+        redis_conn.mset({"isLightOn": isLightOn})
+    return ('/')
+
+@app.route("/rover_control_mode_switch", methods=["POST"])
+def rover_control_mode_switch():
+    jdata = request.json
+    isManuelModeActive = jdata.get("isManuelModeActive")
+    print("isManuelModeActive?", isManuelModeActive)
+    if IS_REDIS_CONNECTED:
+        redis_conn.mset({"isManuelModeActive": isManuelModeActive})
     return ('/')
 
 @app.route("/settings")
@@ -46,7 +74,7 @@ def gen_frames():
     while True:
         success, frame = capture.read()
         if not success:
-            capture = cv2.VideoCapture("/home/linux/Videos/test-0.mp4")
+            capture = cv2.VideoCapture("./templates/test-0.mp4")
             break
         else:
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -76,4 +104,4 @@ if __name__ == "__main__":
     if os.path.exists(context[0]) and os.path.exists(context[1]):
         app.run(host="0.0.0.0", debug=True, ssl_context=context)
     else:
-        app.run(host="0.0.0.0", debug=True,  ssl_context="adhoc")
+        app.run(host="0.0.0.0", debug=True)

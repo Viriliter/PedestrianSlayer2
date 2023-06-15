@@ -2,27 +2,71 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="../static/css/slideshow.css" />
 
 <body>
     <div>
-        <p class="header-text">SETTINGS</p>
+        <p class="header-text">Orientation Calibration</p>
     </div>
 
     <div class="col rounded_panel">
-        <div>
+        <!-- Slideshow container -->
+        <div class="slideshow-container" style="min-height:300px;">
+
+            <!-- Full-width images with number and caption text -->
+            <div class="row mySlides">
+                <div class="numbertext">1 / 4</div>
+                <div class="text">In order to calibrate orientation sensor click "Calibrate" button</div>
+            </div>
+
+            <div class="mySlides">
+                <div class="numbertext">2 / 4</div>
+                <div class="text">Hold and rotate your device as follows, then click "Next" button</div>
+            </div>
+
+            <div class="mySlides">
+                <div class="numbertext">3 / 4</div>
+                <div class="text">Hold and rotate your device as follows, then click "Next" button</div>
+            </div>
+
+            <div class="mySlides">
+                <div class="numbertext">4 / 4</div>
+                <div class="text">Hold and rotate your device as follows, then click "Finish" button</div>
+            </div>
+
+            <!-- Next and previous buttons -->
+            <a class="next" onclick="plusSlides(1)">&#10095;</a>
         </div>
-    </div>
+        <br>
 
-    <div class="col rounded_panel">
-        <div>
-        </div>
-    </div>
-
-    <div class="col rounded_panel">
-        <div>
+        <!-- The dots/circles -->
+        <div style="text-align:center">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
         </div>
     </div>
     
+    <div>
+        <p class="header-text">Streaming</p>
+    </div>
+
+    <div class="col rounded_panel">
+        <div>
+        </div>
+    </div>
+
+    <br />
+
+    <div class="col rounded_panel">
+        <div>
+        </div>
+    </div>
+
+    <script src="../static/js/slideshow.js"></script>
+
+
 </body>
 
 {% endblock %}

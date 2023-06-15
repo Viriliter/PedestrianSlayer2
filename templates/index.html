@@ -3,100 +3,60 @@
 {% block content %}
 
 <link rel="stylesheet" href="../static/css/leaflet.css" />
+<link rel="stylesheet" href="../static/css/keyboard.css" />
 
 <style>
 
-    slider.vertical{
-        display:inline-block;
-        width:.5rem;
-        height:12.5rem;
-        margin:0 1.25rem;
-        -webkit-transform:scale(1,-1);
-        -ms-transform:scale(1,-1);
-        transform:scale(1,-1)
+    slider.vertical {
+        display: inline-block;
+        width: .5rem;
+        height: 12.5rem;
+        margin: 0 1.25rem;
+        -webkit-transform: scale(1,-1);
+        -ms-transform: scale(1,-1);
+        transform: scale(1,-1)
     }
 
-    .case {
-        background-color: #463973;
-        border-color: #2e2640;
-        border-radius: 5px;
-        border-style: solid;
-        border-width: 8px 10px 15px 10px;
-        display: inline-grid;
-        grid-template-columns: repeat(36, 1fr);
-        grid-template-rows: repeat(5, 1fr);
-        height: 7em;
-        padding: 5px;
-        user-select: none;
-        width: 14.5em;
+    .control-button {
+        color: #ff6a00;
+        background: #ffffff;
+        border: 1px solid #ff6a00;
     }
 
-    .key {
-        border-color: #382e59 #2e2640;
-        border-radius: 2px;
-        border-style: solid;
-        border-width: 3px 5px 8px 5px;
-        color: #bbadd9;
-        display: block;
-        font-family: sans-serif;
-        font-size: 9px;
-        font-weight: 800;
-        grid-column-end: span 2;
-        margin: 3px;
-        padding-top: 2px;
-        padding: 5px;
-        text-align: center;
-        text-transform: uppercase;
-        transition: all 50ms ease-out;
-        will-change: box-shadow, color, text-shadow;
+    .control-button:active {
+        background: #ff6a00;
+        color: #ffffff;
+        border: 1px solid #ff6a00;
     }
 
-    .key:empty::before {
-        content: attr(data-key);
+    .control-button:hover {
+        background: #ffa62b;
+        color: #ffffff;
+        border: 1px solid #ff6a00;
     }
 
-    .active {
-        transform: perspective(1200px) translateZ(-90px);
-    }
-
-    .medium {
-        grid-column-end: span 3;
-    }
-
-    .large {
-        grid-column-end: span 4;
-    }
-
-    .xl {
-        grid-column-end: span 5;
-    }
-
-    .xxl {
-        grid-column-end: span 6;
-    }
-
-    .xxxl {
-        grid-column-end: 7;
-    }
-
-    .huge {
-        grid-column-end: span 12;
+    .control-button:focus {
+        background: #ffa62b;
+        color: #ffffff;
+        border: 2px solid #ff6a00;
     }
 </style>
 
 <body>
     <div>
-        <p class="header-text">DASHBOARD</p>
+        <p class="header-text">Dashboard</p>
     </div>
 
     <div class="col rounded_panel">
         <div class="row">
-            <div class="col-1" style="width:50%; height: 100%;">
-                <img src="{{ url_for('video_feed') }}" width="100%">
+            <div class="col-1" style="width:50%; height: inherit;">
+                <center>
+                    <img src="{{ url_for('video_feed') }}" style="width: 100%; height: fit-content;">
+                </center>
             </div>
             <div class="col-2" style="width:50%; height: 100%; vertical-align:center; margin-left: auto; margin-right: auto;">
                 <div id="rover-map" style="width:100%; height:300px;"></div>
-            </div>   
+            </div>
         </div>
         <!--div class="col" style="height: 100%; vertical-align:center; margin-left: auto margin-right: auto;">
             <video id="video_cam" style="height: 100%; width:600px;max-width:100%;" controls autoplay name="media">
@@ -105,29 +65,78 @@
         </div-->
     </div>
 
+    <div>
+        <p class="header-text">Rover Control</p>
+    </div>
+
     <div class="col rounded_panel">
         <div class="row">
-            <div class="col" style="width:50%; height: 100%;">
+
+            <!--div class="col" style="width:50%; height: 100%;">
                 <div class="row">
-                    <div class="col">
-                        <img style="height: 200px; width: 200px; transform: rotate(270deg); margin:0 auto" src="../static/icons/car-top.svg">
+                    <div style="width: 80%;">
+                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                            <img style="height: 200px; width: 200px; transform: rotate(270deg); margin:0 auto" src="../static/icons/car-top.svg">
+                        </div>
                     </div>
-                    <div class="col">
-                        <div style="width: 100%;">
-                            <div  style="transform: rotate(270deg);">
+                    <div style="width: 20%;">
+                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                            <div style="transform-origin:center; transform: rotate(270deg);">
                                 <input id="slider-thrust" class="slider" type="range" min="-100" max="100" value="0">
                             </div>
                         </div>
                     </div>
 
                 </div>
-                <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
-                    <div style="width: 100%;">
-                        <input id="slider-steering" class="slider" type="range" min="-100" max="100" value="0" style="width:80%; margin-left: auto; margin-right: auto; align-content: center; margin: 0 auto;">
+                <div class="row" style="/*margin-left: auto; margin-right: auto; align-content: center;*/">
+                    <input id="slider-steering" class="slider" type="range" min="-100" max="100" value="0" style="width:30%; margin-left: auto; margin-right: auto; align-content: center; margin: 0 auto;">
+                </div>
+            </div-->
+
+            <div class="col" style="width:50%; height: 100%;">
+                <div class="row" style="width: 100%; height: 90%; margin-left: auto; margin-right: auto; align-content: center;">
+                    <div style="width: 90%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
+                        <center>
+                            <img style="height: 200px; width: 200px; transform-origin: center; transform: rotate(270deg); margin: 0 auto" src="../static/icons/car-top.svg">
+                        </center>
+                    </div>
+                    <div style="width: 30px; height: initial; margin-left: auto; margin-right: auto; align-content: center;">
+                        <input id="slider-thrust" class="slider" type="range" min="-100" max="100" value="0" disabled style="width: 200px; height: 100%; transform-origin: 50% 50%; transform: rotate(270deg); margin-left: -95px;">
                     </div>
                 </div>
+                <div class="row" style="width: 100%; height: 10%; margin-left: auto; margin-right: auto; align-content: center;">
+                    <div style="width: 90%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
+                        <input id="slider-steering" class="slider" type="range" min="-100" max="100" value="0" disabled style="width:100%; margin-left: auto; margin-right: auto; align-content: center; margin: 0 auto;">
+                    </div>
+                    <div style="width: 10%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
+                        <!--BLANK-->
+                    </div>
+                </div>
+                <p style="text-align: center;">
+                    Thrust: <span id="thrust">0</span> |
+                    Steer: <span id="steering">0</span>
+                </p>
+
             </div>
+
             <div class="col" style="width:50%; height: 100%;">
+                <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                    <center>
+                        <div class="col">
+                            <button id="buttonStartStop" class="control-button" onclick="roverControlStartStop(this)"></button>
+                            <button id="buttonLightControl" class="control-button" onclick="roverControlLight(this)"></button>
+                        </div>
+                    </center>
+                </div>
+                <br />
+                <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                    <center>
+                        <div class="col">
+                            <button id="buttonModeSwitch" class="control-button" onclick="roverControlModeSwitch(this)"></button>
+                        </div>
+                    </center>
+                </div>
+                <br />
                 <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
                     <div class="case" style="margin-left: auto; margin-right: auto; align-content: center; margin:0 auto;">
                         <div class="col" style="width: 200px">
@@ -154,17 +163,16 @@
                         </div>
                     </div>
                 </div>
-            </div>   
+            </div>
         </div>
+    </div>
+
+    <div>
+        <p class="header-text">Rover Info</p>
     </div>
 
     <div class="col rounded_panel">
         <div class="row" style="height: 100%; vertical-align:center; margin-left: auto; margin-right: auto;">
-            <p style="text-align: center;">
-                Thrust: <span id="thrust">0</span> |
-                Steer: <span id="steering">0</span>
-            </p>
-
             <label class="flex items-center cursor-pointer" or="toggle-yworz7uajt">
                 <div class="relative">
                     <input id="toggle-yworz7uajt" onclick="requestOrientationPermission()" type="checkbox" class="hidden">
@@ -190,22 +198,52 @@
             </p>
 
             <!--
-        <video id="live_cam"
-                type="video/mp4"
-                src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
-                width="1280" height="720"
-                autoplay
-                loop
-                controls>
-        </video>
-        -->
-
+            <video id="live_cam"
+                    type="video/mp4"
+                    src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
+                    width="1280" height="720"
+                    autoplay
+                    loop
+                    controls>
+            </video>
+            -->
         </div>
+
     </div>
+
+    <br />
 
     <script>
         let thrust = 0;
         let steering = 0;
+        let isRoverStopped = true;
+        let isLightOn = false;
+        let isManuelModeActive = true;
+
+        const buttonStartStop = document.querySelector("#buttonStartStop");
+        const buttonLightControl = document.querySelector("#buttonLightControl");
+        const buttonModeSwitch = document.querySelector("#buttonModeSwitch");
+
+        if (isRoverStopped) {
+            buttonStartStop.textContent = "Start"
+        }
+        else {
+            buttonStartStop.textContent = "Stop"
+        }
+
+        if (isLightOn) {
+            buttonLightControl.textContent = "Light Off"
+        }
+        else {
+            buttonLightControl.textContent = "Light On"
+        }
+
+        if (isManuelModeActive) {
+            buttonModeSwitch.textContent = "Set to Auto Drive"
+        }
+        else {
+            buttonModeSwitch.textContent = "Set to Manuel Drive"
+        }
 
         const keysArr = [...document.querySelectorAll(".key")];
 
@@ -291,33 +329,14 @@
             const key = getKey(event);
             if (key) {
                 animate(key);
-                if (key == document.querySelector(`[data-key="arrowup"]`)) {
-                    thrust = Math.min(thrust + 10, 100);
-                }
-                if (key == document.querySelector(`[data-key="arrowdown"]`)) {
-                    thrust = Math.max(thrust - 10, -100);
-                }
-                if (key == document.querySelector(`[data-key="arrowleft"]`)) {
-                    steering = Math.max(steering - 10, -100);
-                }
-                if (key == document.querySelector(`[data-key="arrowright"]`)) {
-                    steering = Math.min(steering + 10, 100);
-                }
-            
-                document.getElementById("slider-thrust").value = thrust.toFixed(2); 
-                document.getElementById("slider-steering").value = steering.toFixed(2);
-
-                document.getElementById("thrust").innerText = thrust.toFixed(2);
-                document.getElementById("steering").innerText = steering.toFixed(2);
-                const request = new XMLHttpRequest()
-                request.open('POST', `/rover_control/${JSON.stringify(thrust.toFixed(2))}_${JSON.stringify(steering.toFixed(2))}`)
-                request.send();
+                onKeyStroke(key);
             }
         });
 
         document.addEventListener("click", (event) => {
             if (event.target.dataset.key) {
                 animate(event.target);
+                onKeyStroke(event.target);
             }
         });
 
@@ -325,6 +344,7 @@
             const key = document.querySelector(`[data-key="enter"]`);
             animate(key);
         });
+
 
         window.addEventListener('deviceorientation', handleOrientation);
         function handleOrientation(event) {
@@ -340,25 +360,26 @@
             document.getElementById("orient_gamma").innerText = gamma.toFixed(2);
 
             var rotation = getEulerAngles(getRotationMatrix(alpha, beta, gamma));
-            var steering = rotation[0];
-            var tilt = rotation[1];
-            var compass = rotation[2];
-            document.getElementById("orient_steering").innerText = steering.toFixed(2);
-            document.getElementById("orient_tilt").innerText = tilt.toFixed(2);
-            document.getElementById("orient_compass").innerText = compass.toFixed(2);
+            var euler_steering = rotation[0];
+            var euler_tilt = rotation[1];
+            var euler_compass = rotation[2];
+            document.getElementById("orient_steering").innerText = euler_steering.toFixed(2);
+            document.getElementById("orient_tilt").innerText = euler_tilt.toFixed(2);
+            document.getElementById("orient_compass").innerText = euler_compass.toFixed(2);
 
-            var scaledThrust = convertRange(Math.min(Math.max(tilt, -45), 45), [45, -45], [-100, 100]);
-            var scaledSteering = convertRange(Math.min(Math.max(steering, -90), 90), [90, -90], [-100, 100]);
-            
-            document.getElementById("slider-thrust").value = scaledThrust.toFixed(2); 
-            document.getElementById("slider-steering").value = scaledSteering.toFixed(2);
+            thrust = convertRange(Math.min(Math.max(euler_tilt, -45), 45), [45, -45], [-100, 100]);
+            steering = convertRange(Math.min(Math.max(euler_steering, -90), 90), [90, -90], [-100, 100]);
 
-            document.getElementById("thrust").innerText = scaledThrust.toFixed(2);
-            document.getElementById("steering").innerText = scaledSteering.toFixed(2);
+            document.getElementById("slider-thrust").value = thrust.toFixed(2);
+            document.getElementById("slider-steering").value = steering.toFixed(2);
+
+            document.getElementById("thrust").innerText = thrust.toFixed(2);
+            document.getElementById("steering").innerText = steering.toFixed(2);
 
             const request = new XMLHttpRequest()
-            request.open('POST', `/rover_control/${JSON.stringify(scaledThrust.toFixed(2))}_${JSON.stringify(scaledSteering.toFixed(2))}`)
-            request.send();
+            request.open("POST", "/rover_control")
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            request.send(JSON.stringify({ "thrust": thrust.toFixed(2), "steering": steering.toFixed(2) }));
 
         };
 
@@ -370,6 +391,33 @@
         window.addEventListener("compassneedscalibration", function () {
             alert("Compass needs calibration. Please rotate.");
         });
+
+        function onKeyStroke(key) {
+            if (key == document.querySelector(`[data-key="arrowup"]`)) {
+                thrust = Math.min(thrust + 10, 100);
+            }
+            if (key == document.querySelector(`[data-key="arrowdown"]`)) {
+                thrust = Math.max(thrust - 10, -100);
+            }
+
+            if (key == document.querySelector(`[data-key="arrowright"]`)) {
+                steering = Math.min(steering + 10, 100);
+            }
+            if (key == document.querySelector(`[data-key="arrowleft"]`)) {
+                steering = Math.max(steering - 10, -100);
+            }
+
+            document.getElementById("slider-thrust").value = thrust.toFixed(2);
+            document.getElementById("slider-steering").value = steering.toFixed(2);
+
+            document.getElementById("thrust").innerText = thrust.toFixed(2);
+            document.getElementById("steering").innerText = steering.toFixed(2);
+
+            const request = new XMLHttpRequest()
+            request.open("POST", "/rover_control")
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            request.send(JSON.stringify({ "thrust": thrust.toFixed(2), "steering": steering.toFixed(2) }));
+        };
 
         function getRotationMatrix(alpha, beta, gamma) {
             const degtorad = Math.PI / 180; // Degree-to-Radian conversion
@@ -421,13 +469,13 @@
             return (value - r1[0]) * (r2[1] - r2[0]) / (r1[1] - r1[0]) + r2[0];
         }
 
-
         function requestOrientationPermission() {
-            console.log(0)
             // Note that DeviceMotionEvent is mobile functionality,
             // so it will not work for desktop browsers
             if (typeof DeviceMotionEvent.requestPermission !== 'function') {
-                console.error("Browser has not got orientation sensor support!")
+                const error_text = "Device does not support orientation sensor!";
+                console.error(error_text)
+                alert(error_text)
                 return;
             }
 
@@ -449,6 +497,50 @@
                 })
                 .catch(console.error)
         }
+
+        function roverControlStartStop(element) {
+            isRoverStopped = !isRoverStopped;
+            if (isRoverStopped) {
+                element.textContent = "Start"
+            }
+            else {
+                element.textContent = "Stop"
+            }
+
+            const request = new XMLHttpRequest()
+            request.open("POST", "/rover_control_start_stop")
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            request.send(JSON.stringify({ "isRoverStopped": isRoverStopped }));
+        };
+
+        function roverControlLight(element) {
+            isLightOn = !isLightOn;
+            if (isLightOn) {
+                element.textContent = "Light Off"
+            }
+            else {
+                element.textContent = "Light On"
+            }
+            const request = new XMLHttpRequest()
+            request.open("POST", "/rover_control_light")
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            request.send(JSON.stringify({ "isLightOn": isLightOn }));
+        };
+
+        function roverControlModeSwitch(element) {
+            isManuelModeActive = !isManuelModeActive;
+            if (isManuelModeActive) {
+                element.textContent = "Set to Auto Drive"
+            }
+            else {
+                element.textContent = "Set to Manuel Drive"
+            }
+            const request = new XMLHttpRequest()
+            request.open("POST", "/rover_control_mode_switch")
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            request.send(JSON.stringify({ "isManuelModeActive": isManuelModeActive }));
+        };
+
     </script>
 
     <script src="../static/js/leaflet.js"></script>
@@ -471,15 +563,15 @@
     </script>
 
     <!--script>
-    const videoTag = document.getElementById("live_cam");
+        const videoTag = document.getElementById("live_cam");
 
-.toFixed(2)    // creating the MediaSource, just with the "new" keyword, and the URL for it
-    const myMediaSource = new MediaSource();
-    const url = URL.createObjectURL(myMediaSource);
+    .toFixed(2)    // creating the MediaSource, just with the "new" keyword, and the URL for it
+        const myMediaSource = new MediaSource();
+        const url = URL.createObjectURL(myMediaSource);
 
-    // attaching the MediaSource to the video tag
-    videoTag.src = url;
-    </script-->
+        // attaching the MediaSource to the video tag
+        videoTag.src = url;
+        </script-->
 </body>
 
 {% endblock %}
