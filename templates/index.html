@@ -47,15 +47,15 @@
         <p class="header-text">Dashboard</p>
     </div>
 
-    <div class="col rounded_panel">
+    <div class="col rounded_panel" id="panelDashboard">
         <div class="row">
-            <div class="col-1" style="width:50%; height: inherit;">
+            <div class="col-1" id="streamContainer" style="width:50%; height: inherit;">
                 <center>
-                    <img src="{{ url_for('video_feed') }}" style="width: 100%; height: fit-content;">
+                    <img id="rover-stream" src="{{ url_for('video_feed') }}" style="width: 100%; height: fit-content;">
                 </center>
             </div>
-            <div class="col-2" style="width:50%; height: 100%; vertical-align:center; margin-left: auto; margin-right: auto;">
-                <div id="rover-map" style="width:100%; height:300px;"></div>
+            <div class="col-2" id="mapContainer" style="width:50%; height: inherit; vertical-align:center; margin-left: auto; margin-right: auto;">
+                <div id="rover-map" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
         <!--div class="col" style="height: 100%; vertical-align:center; margin-left: auto margin-right: auto;">
@@ -197,16 +197,25 @@
                 Compass: <span id="orient_compass">0</span>
             </p>
 
+            <input id="toggle-geo-location" onclick="getLocation()" type="checkbox" class="hidden">
+
+            <p style="text-align: center;">
+                Latitude: <span id="home_geo_lat">0</span> |
+                Longitude: <span id="home_geo_lon">0</span> |
+                Altitude: <span id="home_geo_alt">0</span> |
+                Accuracy: <span id="home_geo_accuracy">-1</span> m
+            </p>
+
             <!--
-            <video id="live_cam"
-                    type="video/mp4"
-                    src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
-                    width="1280" height="720"
-                    autoplay
-                    loop
-                    controls>
-            </video>
-            -->
+    <video id="live_cam"
+            type="video/mp4"
+            src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
+            width="1280" height="720"
+            autoplay
+            loop
+            controls>
+    </video>
+    -->
         </div>
 
     </div>
@@ -546,10 +555,19 @@
     <script src="../static/js/leaflet.js"></script>
 
     <script>
+        // Home location
+        let home_lat = 0;
+        let home_lon = 0;
+        let home_alt = 0;
+        let firstHomeLocUpdate = false;
+
+        // Waypoint Array
+        const waypoints = [];
+
         // Creating map options
         var mapOptions = {
-            center: [0, 0],
-            zoom: 12
+            center: [home_lat, home_lon],
+            zoom: 1
         }
 
         // Creating a map object
@@ -560,6 +578,80 @@
 
         // Adding layer to the map
         map.addLayer(layer);
+
+        newMarkerGroup = new L.LayerGroup();
+        map.on('dblclick', addWaypoint);
+
+        // Dynamic Map height using resize observer
+        let mapResizeObserver = new ResizeObserver(() => {
+            $("#rover-map").height($("#rover-stream").height());
+            map.invalidateSize();   
+        });
+        mapResizeObserver.observe(document.getElementById("rover-stream"));
+        //$("#rover-stream").on("resize", function () { console.log($("#rover-stream").height()); $("#rover-map").height($("#rover-stream").height()); map.invalidateSize(); }).trigger("resize");
+
+        // Create Home marker
+        var homeMarkerIcon = L.icon({
+            iconUrl: '../static/js/images/marker-icon-red.png',
+            shadowUrl: '../static/js/images/marker-shadow.png',
+
+            iconSize: [25, 41], // size of the icon
+            shadowSize: [41, 41], // size of the shadow
+            iconAnchor: [12, 41], // point of the icon which will correspond to marker's location
+            shadowAnchor: [13, 41],  // the same for the shadow
+            popupAnchor: [1, -34] // point from which the popup should open relative to the iconAnchor
+        });
+
+        let homeMarker = new L.marker([home_lat, home_lon], { icon: homeMarkerIcon }).addTo(map);
+
+        // Get home location
+        getLocation();
+
+        function getLocation() {           
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(setHomePosition);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function setHomePosition(position) {
+            home_lat = position.coords.latitude;
+            home_lon = position.coords.longitude;
+            home_alt = position.coords.altitude;
+
+            addHomeMarker();
+
+            document.getElementById("home_geo_lat").innerText = position.coords.latitude;
+            document.getElementById("home_geo_lon").innerText = position.coords.longitude;
+            document.getElementById("home_geo_alt").innerText = position.coords.altitude;
+            document.getElementById("home_geo_accuracy").innerText = position.coords.accuracy;
+
+            // Center map to home position on first location update
+            if (!firstHomeLocUpdate) {
+                firstHomeLocUpdate = true;
+                map.panTo(new L.LatLng(home_lat, home_lon));
+            }
+        }
+
+        function addHomeMarker() {
+            // Add marker to map at click location; add popup window
+            console.log(home_lat)
+            console.log(home_lon)
+            if (home_lat == NaN || home_lon == NaN) return;
+            var newHomeLoc = new L.LatLng(home_lat, home_lon);
+            homeMarker.setLatLng(newHomeLoc);
+            var popup = homeMarker.bindPopup(`<br><strong>Home Point</strong></br> Latitude:${home_lat.toFixed(6)}\n Longitude:${home_lon.toFixed(6)}`);
+        }
+
+        function addWaypoint(e) {
+            // Add marker to map at click location; add popup window
+            L.marker()
+            var newMarker = new L.marker(e.latlng).addTo(map);
+            var popup = newMarker.bindPopup(`Latitude:${e.latlng.lat.toFixed(6) }\n Longitude:${e.latlng.lng.toFixed(6)}`);
+
+        }
+
     </script>
 
     <!--script>
@@ -571,7 +663,7 @@
 
         // attaching the MediaSource to the video tag
         videoTag.src = url;
-        </script-->
+     </script-->
 </body>
 
 {% endblock %}

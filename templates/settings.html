@@ -14,30 +14,28 @@
         <div class="slideshow-container" style="min-height:300px;">
 
             <!-- Full-width images with number and caption text -->
-            <div class="row mySlides">
-                <div class="numbertext">1 / 4</div>
+            <div class="mySlides">
                 <div class="text">In order to calibrate orientation sensor click "Calibrate" button</div>
             </div>
 
             <div class="mySlides">
-                <div class="numbertext">2 / 4</div>
                 <div class="text">Hold and rotate your device as follows, then click "Next" button</div>
             </div>
 
             <div class="mySlides">
-                <div class="numbertext">3 / 4</div>
                 <div class="text">Hold and rotate your device as follows, then click "Next" button</div>
             </div>
 
             <div class="mySlides">
-                <div class="numbertext">4 / 4</div>
                 <div class="text">Hold and rotate your device as follows, then click "Finish" button</div>
             </div>
 
             <!-- Next and previous buttons -->
-            <a class="next" onclick="plusSlides(1)">&#10095;</a>
         </div>
         <br>
+        <div style="text-align:center">
+            <button id="buttonCalibrateNext" class="control-button button" onclick="onCalibrationStepClick()">Calibrate (0/3)</button>
+        </div>
 
         <!-- The dots/circles -->
         <div style="text-align:center">
@@ -54,6 +52,17 @@
 
     <div class="col rounded_panel">
         <div>
+            <a style="width:100px;">Video Quality</a>
+            <select id="selectStreamQuality">
+                <option value="Auto">Auto</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+            </select>
+        </div>
+        <div style="margin-top:5px">
+            <a style="width:100px;">Frame Rate</a>
+            <input id="inputStreamFrameRate" type="number" min="1" max="30" step="1" value="1" style="width:100px;"/>
         </div>
     </div>
 
@@ -65,6 +74,142 @@
     </div>
 
     <script src="../static/js/slideshow.js"></script>
+    <script>
+        let isCalibrationActive = false;
+        let isCalibrationSteeringActive = false;
+        let isCalibrationTiltActive = false;
+        let isCalibrationCompassActive = false;
+
+        let newCalibrationSteeringRangeMin = 0;
+        let newCalibrationSteeringRangeMax = 0;
+        let newCalibrationTiltRangeMin = 0;
+        let newCalibrationTiltRangeMax = 0;
+        let newCalibrationCompassRangeMin = 0;
+        let newCalibrationCompassRangeMax = 0;
+
+        window.addEventListener('deviceorientation', handleOrientation);
+        function handleOrientation(event) {
+            const alpha = event.alpha;
+            const beta = event.beta;
+            const gamma = event.gamma;
+
+            if (alpha == null && beta == null && gamma == null)
+                return
+
+            document.getElementById("orient_alpha").innerText = alpha.toFixed(2);
+            document.getElementById("orient_beta").innerText = beta.toFixed(2);
+            document.getElementById("orient_gamma").innerText = gamma.toFixed(2);
+
+            var rotation = getEulerAngles(getRotationMatrix(alpha, beta, gamma));
+            var euler_steering = rotation[0];
+            var euler_tilt = rotation[1];
+            var euler_compass = rotation[2];
+
+            if (!isCalibrationActive) {
+                let newCalibrationSteeringRangeMin = euler_steering;
+                let newCalibrationSteeringRangeMax = euler_steering;
+                let newCalibrationTiltRangeMin = euler_tilt;
+                let newCalibrationTiltRangeMax = euler_tilt;
+                let newCalibrationCompassRangeMin = euler_compass;
+                let newCalibrationCompassRangeMax = euler_compass;
+            }
+            else return;
+
+            if (isCalibrationSteeringActive) {
+                newCalibrationSteeringRangeMax = euler_steering > newCalibrationSteeringRangeMax ? euler_steering : newCalibrationSteeringRangeMax; 
+                newCalibrationSteeringRangeMin = euler_steering < newCalibrationSteeringRangeMin ? euler_steering : newCalibrationSteeringRangeMin; 
+            };
+            if (isCalibrationTiltActive) {
+                newCalibrationTiltRangeMax = euler_tilt > newCalibrationTiltRangeMax ? euler_tilt : newCalibrationTiltRangeMax;
+                newCalibrationTiltRangeMin = euler_tilt < newCalibrationTiltRangeMin ? euler_tilt : newCalibrationTiltRangeMin; 
+            };
+            if (isCalibrationCompassActive) {
+                newCalibrationCompassRangeMax = euler_compass > newCalibrationCompassRangeMax ? euler_compass : newCalibrationCompassRangeMax;
+                newCalibrationCompassRangeMin = euler_compass < newCalibrationCompassRangeMin ? euler_compass : newCalibrationCompassRangeMin; 
+            };
+        };
+
+        function onCalibrationStepClick(){
+            var element = document.getElementById("buttonCalibrateNext");
+            console.log(slideIndex);
+            if (slideIndex == 1) {
+                onCalibrationStep1();
+                plusSlides(1);
+                element.innerText = "Next (1/3)";
+            }
+
+            else if (slideIndex == 2) {
+                onCalibrationStep2();
+                plusSlides(1);
+                element.innerText = "Next (2/3)";
+            }
+
+            else if (slideIndex == 3) {
+                onCalibrationStep3();
+                plusSlides(1);
+                element.innerText = "Finish (3/3)";
+            }
+
+            else if (slideIndex == 4) {
+                onCalibrationStep4();
+                slideIndex = 1;
+                showSlides(1);
+                element.innerText = "Calibrate (0/3)";
+            }
+            else {
+                showSlides(1);
+                element.innerText = "Calibrate (0/3)";
+            }
+        }
+
+        function onCalibrationStep1() {
+            let isCalibrationActive = true;
+            let isCalibrationSteeringActive = true;
+            let isCalibrationTiltActive = false;
+            let isCalibrationCompassActive = false;
+        }
+
+        function onCalibrationStep2() {
+            let isCalibrationSteeringActive = false;
+            let isCalibrationTiltActive = true;
+            let isCalibrationCompassActive = false;
+
+        }
+
+        function onCalibrationStep3() {
+            let isCalibrationSteeringActive = false;
+            let isCalibrationTiltActive = false;
+            let isCalibrationCompassActive = true;
+
+        }
+
+        function onCalibrationStep4() {
+            let isCalibrationActive = false;
+            let isCalibrationSteeringActive = false;
+            let isCalibrationTiltActive = false;
+            let isCalibrationCompassActive = false;
+
+            // Store Calibration values
+            localStorage.setItem("CalibrationSteeringRangeMax", newCalibrationSteeringRangeMax);
+            localStorage.setItem("CalibrationSteeringRangeMin", newCalibrationSteeringRangeMin);
+
+            localStorage.setItem("CalibrationTiltRangeMax", newCalibrationTiltRangeMax);
+            localStorage.setItem("CalibrationTiltRangeMin", newCalibrationTiltRangeMin);
+
+            localStorage.setItem("CalibrationCompassRangeMax", newCalibrationCompassRangeMax);
+            localStorage.setItem("CalibrationCompassRangeMin", newCalibrationCompassRangeMin);
+        }
+
+        function onClearCalibration() {
+            localStorage.setItem.removeItem("CalibrationSteeringRangeMax");
+            localStorage.setItem.removeItem("CalibrationSteeringRangeMin");
+            localStorage.setItem.removeItem("CalibrationTiltRangeMax");
+            localStorage.setItem.removeItem("CalibrationTiltRangeMin");
+            localStorage.setItem.removeItem("CalibrationCompassRangeMax");
+            localStorage.setItem.removeItem("CalibrationCompassRangeMin");
+        }
+
+    </script>
 
 
 </body>

@@ -42,6 +42,25 @@
         background-color: rgba(0,0,0,0.8);
     }
 
+/* Position the "next button" to the right */
+.button {
+    background-color: rgb(35, 155, 230);
+    color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 10px 10px 10px 10px;
+    cursor: pointer;
+    height: 30px;
+    width: 200px;
+    margin: 0 2px;
+    display: inline-block;
+    transition: background-color 0.6s ease;
+}
+
+    /* On hover, add a black background color with a little bit see-through */
+    .prev:hover, .next:hover {
+        background-color: rgba(0,0,0,0.8);
+    }
+
 /* Caption text */
 .text {
     color: #717171;
