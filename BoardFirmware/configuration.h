@@ -1,0 +1,13 @@
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
+
+#define MASTER_UART_ID uart0
+#define MASTER_UART_BAUD_RATE 115200
+
+#define MASTER_UART_TX_PIN 0
+#define MASTER_UART_RX_PIN 1
+
+
+
+
+#endif // CONFIGURATION_H
