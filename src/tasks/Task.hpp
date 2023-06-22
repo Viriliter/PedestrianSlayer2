@@ -221,15 +221,24 @@ namespace tasks{
         uint16_t readMsgQueue(const char *msgQueueName, char *queue){
             uint16_t queueSize = 0;
             mq_attr mq_attr_;
-            mqd_t mqd_t_ = mq_open(msgQueueName, O_RDONLY|O_NONBLOCK);
+            mqd_t mqd_t_ = mq_open(msgQueueName, O_RDONLY);
             
-            if (mq_getattr(mqd_t_, &mq_attr_) == -1)
+            
+            if (mq_getattr(mqd_t_, &mq_attr_) == -1) {
+                int errvalue = errno;
+                std::string nn;
+                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
+                std::cout << "The error generated was " << std::to_string(errvalue) << " in readMsgQueue - " << nn << std::endl;
+                std::cout << "That means: " << strerror( errvalue ) << std::endl;
                 return 0;
+            }
             
             // Check whether there is any available message in the queue
             if (mq_attr_.mq_curmsgs<=0) return 0;
 
             size_t ret_rec = mq_receive(mqd_t_, queue, MAX_MQ_MSG_SIZE+1, NULL);
+            std::cout << "ret_rec: " << std::to_string(ret_rec) << std::endl;
+
             /*
             struct timespec tm;
             clock_gettime(CLOCK_REALTIME, &tm);
@@ -282,11 +291,11 @@ namespace tasks{
         template<typename T>
         bool writeMsgQueue(const char *msgQueueName, std::vector<T> &queue, uint64_t queueSize){
             CurrentRecursionDepth++;
-            if (CurrentRecursionDepth > MAX_RECURSION_LIMIT) return false;
+            if (CurrentRecursionDepth > MAX_RECURSION_LIMIT) {std::cout << "MAX_RECURSION_LIMIT is reached" << std::endl; return false;}
 
             mqd_t mqd_t_ = mq_open(msgQueueName, O_WRONLY|O_NONBLOCK);
             // TODO send message to the queue according to task priority              
-            if (queueSize > MAX_MQ_MSG_SIZE) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
+            if (queueSize > MAX_MQ_MSG_SIZE-2) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
 
             char *buf = new char[MAX_MQ_MSG_SIZE];
             // First two bytes defines the size of the queue
@@ -305,8 +314,8 @@ namespace tasks{
                 if (errvalue==EAGAIN){  // Resource temporarily unavailable (Occurs when queue reaches max size)
                     // Erase a message by reading from queue
                     char *temp = new char[MAX_MQ_MSG_SIZE];
-                    mqd_t mqd_temp = mq_open(msgQueueName, O_RDONLY|O_NONBLOCK);
-                    mq_receive(mqd_temp, temp, MAX_MQ_MSG_SIZE+1, NULL);
+                    mqd_t mqd_temp = mq_open(msgQueueName, O_RDONLY);
+                    mq_receive(mqd_temp, temp, MAX_MQ_MSG_SIZE, NULL);
                     delete[] temp;
                     // Try to write again
                     writeMsgQueue(msgQueueName, queue, queueSize);
@@ -314,11 +323,12 @@ namespace tasks{
                 else {
                     std::string nn;
                     for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
-                    std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue" << nn << std::endl;
+                    std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue - " << nn << std::endl;
                     std::cout << "That means: " << strerror( errvalue ) << std::endl;
                 }
             }
-
+            
+            if (CurrentRecursionDepth>0) CurrentRecursionDepth--;
             return (bool) (ret_rec==0);
         };
         

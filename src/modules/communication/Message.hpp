@@ -13,7 +13,6 @@
 //#include "simdjson.h"
 #include "../../third-party/nlohmann/json.hpp"
 #include "../../utils/container.h"
-#include "../../utils/timing.h"
 #include "../../utils/types.h"
 
 namespace comm::serial{

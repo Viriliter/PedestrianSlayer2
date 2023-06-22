@@ -157,10 +157,7 @@ void SlaveCommunicationTask::runTask(){
             if (pair.second.MsgSize>0){
                   // Create a posix message to send to message queue
                 std::vector<UINT8> rxMsg = pair.second.toVector();
-                for (auto const &tx_byte: rxMsg){
-                    std::cout << ", " << std::to_string(tx_byte) << " ";
-                }
-                std::cout << std::endl;
+
                 // Create IPC message for posix queue
                 comm::ipc::PayloadType in_payload;
                 comm::ipc::insert_package<std::vector<UINT8>>(in_payload, "Raw", rxMsg);
@@ -176,21 +173,24 @@ void SlaveCommunicationTask::runTask(){
         }
 
         //Send serial messages
-        /*
+        
         try{
             while (true){
+                std::cout << "--" << std::endl;
                 char queue_slave_comm_in[MAX_MQ_MSG_SIZE+1];
                 UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_in", queue_slave_comm_in);
+                std::cout << queueSize << std::endl;
                 if (queueSize>0){
                     // Start from index 2 since first two bytes are length of queue message
                     comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_slave_comm_in+2, queueSize);
                     auto tx_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
-                    std::cout << "Send tx: ";
+                    std::cout << "<----Tx ";
                     for (auto const &tx_byte: tx_bytes){
-                        std::cout << std::to_string(tx_byte) << " ";
+                        std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) tx_byte << " ";
                         serialPort->Write(tx_bytes);
                     }
                     std::cout << std::endl;
+
                     serialPort->FlushOutputBuffer();
                 }
                 else break;
@@ -199,8 +199,7 @@ void SlaveCommunicationTask::runTask(){
         catch (std::exception &err){
             err.what();
         }
-        */
-
+        
         //timing::sleep(100, timing::timeFormat::formatMiliseconds);
     }
     else{

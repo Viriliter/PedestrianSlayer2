@@ -8,7 +8,7 @@ ControllerTask::ControllerTask(std::string task_name, SCHEDULE_POLICY policy, TA
 
     msg_attr.mq_flags = 0;
     msg_attr.mq_maxmsg = 10;
-    msg_attr.mq_msgsize = 8192;
+    msg_attr.mq_msgsize = MAX_MQ_MSG_SIZE;
     msg_attr.mq_curmsgs = 0;
 
     // epoch(uint64_t) - sourceTask - 
@@ -62,7 +62,7 @@ void ControllerTask::runTask(){
             comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_slave_comm_out+2, queueSizeSlaveCommOut);
             auto raw_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
             
-            std::cout << "----";
+            std::cout << "Rx----> ";
             for(auto &raw_byte:raw_bytes)
             {
                 std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) raw_byte << " ";

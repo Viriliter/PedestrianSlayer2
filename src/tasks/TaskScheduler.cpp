@@ -5,20 +5,20 @@ using namespace tasks;
 TaskScheduler::TaskScheduler(){
     // Create Tasks
     //taskID | taskPeriod | taskPriority | estimatedTaskDuration | rtEnabled | cpuAffinityEnabled
-    ControllerTask *controllerTask = new ControllerTask("ControllerCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(10));
+    ControllerTask *controllerTask = new ControllerTask("ControllerCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
     //NavigationTask *navigationTask = new NavigationTask<cactus_rt::schedulers::Other>();
-    SlaveCommunicationTask *slaveCommunicationTask = new SlaveCommunicationTask("SlaveCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(10));
-    UserControlTask *userControlTask = new UserControlTask("UserControlTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
+    SlaveCommunicationTask *slaveCommunicationTask = new SlaveCommunicationTask("SlaveCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
+    //UserControlTask *userControlTask = new UserControlTask("UserControlTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
     
     // Add tasks into list
     
-    //addTask(controllerTask);
+    addTask(controllerTask);
     //addTask(navigationTask);
     addTask(slaveCommunicationTask);
     //addTask(userControlTask);
     std::cout << controllerTask->taskID() << std::endl;
     std::cout << slaveCommunicationTask->taskID() << std::endl;
-    std::cout << userControlTask->taskID() << std::endl;
+    //std::cout << userControlTask->taskID() << std::endl;
     
 };
 
