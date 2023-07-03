@@ -4,6 +4,7 @@
 
 <link rel="stylesheet" href="../static/css/leaflet.css" />
 <link rel="stylesheet" href="../static/css/keyboard.css" />
+<link rel="stylesheet" href="../static/css/sortable-table.css">
 
 <style>
 
@@ -21,25 +22,72 @@
         color: #ff6a00;
         background: #ffffff;
         border: 1px solid #ff6a00;
+        border-radius: 5px;
     }
 
     .control-button:active {
         background: #ff6a00;
         color: #ffffff;
         border: 1px solid #ff6a00;
+        border-radius: 5px;
     }
 
     .control-button:hover {
         background: #ffa62b;
         color: #ffffff;
         border: 1px solid #ff6a00;
+        border-radius: 5px;
     }
 
     .control-button:focus {
         background: #ffa62b;
         color: #ffffff;
-        border: 2px solid #ff6a00;
+        border: 1px solid #ff6a00;
+        border-radius: 5px;
     }
+
+    .btn {
+        background-color: #ffffff;
+        color: #ffa62b;
+        border: solid 1px #ff6a00;
+        border-radius: 5px;
+    }
+
+    .btn:hover {
+        background-color: #ffa62b;
+        color: #ffffff;
+        border: solid 1px #ff6a00;
+        border-radius: 5px;
+    }
+
+    .btn-add {
+        background-color: #ffffff;
+        color: #4cb639;
+        border: solid 2px #4cb639;
+        border-radius: 5px;
+    }
+
+    .btn-add:hover {
+        background-color: #4cb639;
+        color: #ffffff;
+        border: solid 2px #4cb639;
+        border-radius: 5px;
+    }
+
+    .btn-del {
+        background-color: #ffffff;
+        color: #ff0000;
+        border: solid 2px #ff0000;
+        border-radius: 5px;
+    }
+
+    .btn-del:hover {
+        background-color: #ff0000;
+        color: #ffffff;
+        border: solid 2px #ff0000;
+        border-radius: 5px;
+    }
+
 </style>
 
 <body>
@@ -65,103 +113,137 @@
         </div-->
     </div>
 
-    <div>
-        <p class="header-text">Rover Control</p>
-    </div>
-
-    <div class="col rounded_panel">
-        <div class="row">
-
-            <!--div class="col" style="width:50%; height: 100%;">
-                <div class="row">
-                    <div style="width: 80%;">
-                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
-                            <img style="height: 200px; width: 200px; transform: rotate(270deg); margin:0 auto" src="../static/icons/car-top.svg">
-                        </div>
-                    </div>
-                    <div style="width: 20%;">
-                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
-                            <div style="transform-origin:center; transform: rotate(270deg);">
-                                <input id="slider-thrust" class="slider" type="range" min="-100" max="100" value="0">
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                <div class="row" style="/*margin-left: auto; margin-right: auto; align-content: center;*/">
-                    <input id="slider-steering" class="slider" type="range" min="-100" max="100" value="0" style="width:30%; margin-left: auto; margin-right: auto; align-content: center; margin: 0 auto;">
-                </div>
-            </div-->
-
-            <div class="col" style="width:50%; height: 100%;">
-                <div class="row" style="width: 100%; height: 90%; margin-left: auto; margin-right: auto; align-content: center;">
-                    <div style="width: 90%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
-                        <center>
-                            <img style="height: 200px; width: 200px; transform-origin: center; transform: rotate(270deg); margin: 0 auto" src="../static/icons/car-top.svg">
-                        </center>
-                    </div>
-                    <div style="width: 30px; height: initial; margin-left: auto; margin-right: auto; align-content: center;">
-                        <input id="slider-thrust" class="slider" type="range" min="-100" max="100" value="0" disabled style="width: 200px; height: 100%; transform-origin: 50% 50%; transform: rotate(270deg); margin-left: -95px;">
-                    </div>
-                </div>
-                <div class="row" style="width: 100%; height: 10%; margin-left: auto; margin-right: auto; align-content: center;">
-                    <div style="width: 90%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
-                        <input id="slider-steering" class="slider" type="range" min="-100" max="100" value="0" disabled style="width:100%; margin-left: auto; margin-right: auto; align-content: center; margin: 0 auto;">
-                    </div>
-                    <div style="width: 10%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
-                        <!--BLANK-->
-                    </div>
-                </div>
-                <p style="text-align: center;">
-                    Thrust: <span id="thrust">0</span> |
-                    Steer: <span id="steering">0</span>
-                </p>
-
+    <div class="row">
+        <div class="col-1" style="width: 50%; height: 100%;">
+            <div>
+                <p class="header-text">Rover Control</p>
             </div>
 
-            <div class="col" style="width:50%; height: 100%;">
-                <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
-                    <center>
-                        <div class="col">
-                            <button id="buttonStartStop" class="control-button" onclick="roverControlStartStop(this)"></button>
-                            <button id="buttonLightControl" class="control-button" onclick="roverControlLight(this)"></button>
-                        </div>
-                    </center>
-                </div>
-                <br />
-                <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
-                    <center>
-                        <div class="col">
-                            <button id="buttonModeSwitch" class="control-button" onclick="roverControlModeSwitch(this)"></button>
-                        </div>
-                    </center>
-                </div>
-                <br />
-                <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
-                    <div class="case" style="margin-left: auto; margin-right: auto; align-content: center; margin:0 auto;">
-                        <div class="col" style="width: 200px">
-                            <div class="row">
-                                <div class="col">
-                                </div>
-                                <div class="col">
-                                    <div class="col key" data-key="arrowup">▲</div>
-                                </div>
-                                <div class="col">
-                                </div>
+            <div class="col rounded_panel">
+                <div class="row">
+                    <div class="col" style="width:50%; height: 100%;">
+                        <div class="row" style="width: 100%; height: 90%; margin-left: auto; margin-right: auto; align-content: center;">
+                            <div style="width: 90%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
+                                <center>
+                                    <img style="height: 200px; width: 200px; transform-origin: center; transform: rotate(270deg); margin: 0 auto" src="../static/icons/car-top.svg">
+                                </center>
                             </div>
-                            <div class="row">
+                            <div style="width: 30px; height: initial; margin-left: auto; margin-right: auto; align-content: center;">
+                                <input id="slider-thrust" class="slider" type="range" min="-100" max="100" value="0" disabled="" style="width: 200px; height: 100%; transform-origin: 50% 50%; transform: rotate(270deg); margin-left: -95px;">
+                            </div>
+                        </div>
+                        <div class="row" style="width: 100%; height: 10%; margin-left: auto; margin-right: auto; align-content: center;">
+                            <div style="width: 90%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
+                                <input id="slider-steering" class="slider" type="range" min="-100" max="100" value="0" disabled="" style="width:100%; margin-left: auto; margin-right: auto; align-content: center; margin: 0 auto;">
+                            </div>
+                            <div style="width: 10%; height: 100%; margin-left: auto; margin-right: auto; align-content: center;">
+                                <!--BLANK-->
+                            </div>
+                        </div>
+                        <p style="text-align: center;">
+                            Thrust: <span id="thrust">0</span> |
+                            Steer: <span id="steering">0</span>
+                        </p>
+
+                    </div>
+
+                    <div class="col" style="width:50%; height: 100%;">
+                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                            <center>
                                 <div class="col">
-                                    <div class="key" data-key="arrowleft">◀</div>
+                                    <button id="buttonStartStop" class="control-button" onclick="roverControlStartStop(this)">Start</button>
+                                    <button id="buttonLightControl" class="control-button" onclick="roverControlLight(this)">Light On</button>
                                 </div>
+                            </center>
+                        </div>
+                        <br>
+                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                            <center>
                                 <div class="col">
-                                    <div class="key" data-key="arrowdown">▼</div>
+                                    <button id="buttonModeSwitch" class="control-button" onclick="roverControlModeSwitch(this)">Set to Auto Drive</button>
                                 </div>
-                                <div class="col">
-                                    <div class="key" data-key="arrowright">▶</div>
+                            </center>
+                        </div>
+                        <br>
+                        <div class="row" style="margin-left: auto; margin-right: auto; align-content: center;">
+                            <div class="case" style="margin-left: auto; margin-right: auto; align-content: center; margin:0 auto;">
+                                <div class="col" style="width: 200px">
+                                    <div class="row">
+                                        <div class="col">
+                                        </div>
+                                        <div class="col">
+                                            <div class="col key" data-key="arrowup">▲</div>
+                                        </div>
+                                        <div class="col">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="key" data-key="arrowleft">◀</div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="key" data-key="arrowdown">▼</div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="key" data-key="arrowright">▶</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-2" style="width: 50%; height: 100%;">
+            <div>
+                <p class="header-text">Mission Control</p>
+            </div>
+
+            <div class="col rounded_panel">
+                <div class="row">
+                    <div class="col">
+                        <label for="buttonImportWaypoints" class="btn">Import Waypoints</label>
+                        <input id="buttonImportWaypoints" type="file" style="visibility: hidden; width: 0px; height: 0px;" />
+                    </div>
+                    <div class="col">
+                        <label for="buttonExportWaypoints" class="btn">Export Waypoints</label>
+                        <input id="buttonExportWaypoints" type="file" style="visibility: hidden; width: 0px; height: 0px;" />
+                    </div>
+                </div>
+
+                <div style="max-height: 170px; margin-left: auto; margin-right: 0; overflow: auto; overflow-x:hidden;">
+                    <table id="table_waypoints" class="sortable resizableHeader" style="width: 100%; margin-top:5px;">
+                        <thead>
+                            <tr>
+                                <th class="num" aria-sort="ascending" style="text-align: center; width:10%; height: 30px; position: sticky; top: 0; z-index: 1;"><button type="button">ID<span aria-hidden="true"></span></button></th>
+                                <th style="text-align: center; position: sticky; top: 0; z-index: 1;"><button type="button">Latitude<span aria-hidden="true"></span></button></th>
+                                <th style="text-align: center; position: sticky; top: 0; z-index: 1;"><button type="button">Longitude<span aria-hidden="true"></span></button></th>
+                                <th class="num" style="position: sticky; top: 0; z-index: 1;"><div><button type="button">Action<span aria-hidden="true"></span></button></div></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                        </tbody>
+
+                    </table>
+                </div>
+                <br />
+
+                <div class="col">
+                    <button class="btn-add" type="submit" title="Add Waypoint" onclick="onClickAddNewWaypoints(this)" style="width:10%; height: 30px;"><strong>+</strong></button>
+                    <input id="inputLatitude" type="number" min="-180" max="180" step="1" value="0" style="width: 29%; height: 30px;"></input>
+                    <input id="inputLongitude" type="number" min="-180" max="180" step="1" value="0" style="width: 29%; height: 30px;"></input>
+                    <select id="inputAction" style="width:29%; height: 30px;">
+                        <option value="Pass">Pass</option>
+                        <option value="Wait">Wait</option>
+                        <option value="Return">Return</option>
+                    </select>
+                </div>
+                <br />
+                <div class="col" style="width: 100%; margin-left: auto; margin-right: auto; align-content: center; display: flex;">
+                    <button class="btn-del" type="submit" title="Clear All Waypoints" onclick="onClickClearAllWaypoints(this)" style="height: 30px;align-content: center;margin-left: auto;margin-right: auto;align-content: center;"><strong>Clear All Waypoints</strong></button>
                 </div>
             </div>
         </div>
@@ -207,15 +289,15 @@
             </p>
 
             <!--
-    <video id="live_cam"
-            type="video/mp4"
-            src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
-            width="1280" height="720"
-            autoplay
-            loop
-            controls>
-    </video>
-    -->
+            <video id="live_cam"
+                    type="video/mp4"
+                    src="file:///C:/Users/tr1l3165/VSProjects/PythonProjects/PedestrianSlayer2/test-0.mp4"
+                    width="1280" height="720"
+                    autoplay
+                    loop
+                    controls>
+            </video>
+            -->
         </div>
 
     </div>
@@ -232,6 +314,13 @@
         const buttonStartStop = document.querySelector("#buttonStartStop");
         const buttonLightControl = document.querySelector("#buttonLightControl");
         const buttonModeSwitch = document.querySelector("#buttonModeSwitch");
+
+        // Prevent scolling on browser using arrow keys
+        window.addEventListener("keydown", function (e) {
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        }, false);
 
         if (isRoverStopped) {
             buttonStartStop.textContent = "Start"
@@ -567,7 +656,7 @@
         // Creating map options
         var mapOptions = {
             center: [home_lat, home_lon],
-            zoom: 1
+            zoom: 12
         }
 
         // Creating a map object
@@ -585,7 +674,7 @@
         // Dynamic Map height using resize observer
         let mapResizeObserver = new ResizeObserver(() => {
             $("#rover-map").height($("#rover-stream").height());
-            map.invalidateSize();   
+            map.invalidateSize();
         });
         mapResizeObserver.observe(document.getElementById("rover-stream"));
         //$("#rover-stream").on("resize", function () { console.log($("#rover-stream").height()); $("#rover-map").height($("#rover-stream").height()); map.invalidateSize(); }).trigger("resize");
@@ -605,11 +694,21 @@
         let homeMarker = new L.marker([home_lat, home_lon], { icon: homeMarkerIcon }).addTo(map);
 
         // Get home location
-        getLocation();
+        getLocation()
 
-        function getLocation() {           
+        // Update initial home position for Mission Control Pane
+        var inputLatitude = document.getElementById('inputLatitude')
+        inputLatitude.setAttribute('value', home_lat);
+        var inputLongitude = document.getElementById('inputLongitude');
+        inputLongitude.setAttribute('value', home_lon);
+
+        // Create a timer that update home location in every speceified ms
+        setInterval(getLocation, 5000);
+        
+        function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(setHomePosition);
+                //navigator.geolocation.watchPosition(setHomePosition);
+                navigator.geolocation.getCurrentPosition(setHomePosition);
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
@@ -619,7 +718,7 @@
             home_lat = position.coords.latitude;
             home_lon = position.coords.longitude;
             home_alt = position.coords.altitude;
-
+            console.log(home_lat);
             addHomeMarker();
 
             document.getElementById("home_geo_lat").innerText = position.coords.latitude;
@@ -648,11 +747,77 @@
             // Add marker to map at click location; add popup window
             L.marker()
             var newMarker = new L.marker(e.latlng).addTo(map);
-            var popup = newMarker.bindPopup(`Latitude:${e.latlng.lat.toFixed(6) }\n Longitude:${e.latlng.lng.toFixed(6)}`);
+            var popup = newMarker.bindPopup(`Latitude:${e.latlng.lat.toFixed(6)}\n Longitude:${e.latlng.lng.toFixed(6)}`);
+
+            var tbodyRef = document.getElementById('table_waypoints').getElementsByTagName('tbody')[0];
+            var id = tbodyRef.rows.length;
+
+            appendNewWaypointIntoList(id, e.latlng.lat.toFixed(6), e.latlng.lng.toFixed(6), 'Wait');
+        }
+
+    </script>
+
+    <script>
+        $("#buttonImportWaypoints").change(function () {
+            filename = this.files[0].name;
+            console.log(filename);
+        });
+
+        $("#buttonExportWaypoints").change(function () {
+            if (waypoints.length <= 0) {
+                alert("No waypoints to export!");
+                return;
+            }
+
+            filename = this.files[0].name;
+            console.log(filename);
+        });
+
+        function onClickAddNewWaypoints(sender) {
+            var tbodyRef = document.getElementById('table_waypoints').getElementsByTagName('tbody')[0];
+
+            var inputID = tbodyRef.rows.length;
+            var inputLatitude = document.getElementById('inputLatitude').value;
+            var inputLongitude = document.getElementById('inputLongitude').value;
+            var inputAction = document.getElementById('inputAction').value;
+
+            // Append waypoint at the end of the row
+            appendNewWaypointIntoList(inputID, inputLatitude, inputLongitude, inputAction);
+        }
+
+        function onClickClearAllWaypoints(sender){
+        }
+
+        function appendNewWaypointIntoList(ID, Lat, Lon, Action) {
+            var tbodyRef = document.getElementById('table_waypoints').getElementsByTagName('tbody')[0];
+
+            // Insert a row at the end of table
+            var newRow = tbodyRef.insertRow();
+
+            var cell_0 = newRow.insertCell();
+            var newID = document.createTextNode(`${ID}`);
+            cell_0.appendChild(newID);
+
+            var cell_1 = newRow.insertCell();
+            var newLatitude = document.createTextNode(`${Lat}`);
+            cell_1.appendChild(newLatitude);
+
+            var cell_2 = newRow.insertCell();
+            var newLongitude = document.createTextNode(`${Lon}`);
+            cell_2.appendChild(newLongitude);
+
+            var cell_3 = newRow.insertCell();
+            var newAction = document.createTextNode(`${Action}`);
+            cell_3.appendChild(newAction);
+        }
+
+        function clearWaypointFromList(ID) {
 
         }
 
     </script>
+
+    <script src="../static/js/sortable-table.js"></script>
 
     <!--script>
         const videoTag = document.getElementById("live_cam");
