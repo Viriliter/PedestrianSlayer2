@@ -31,12 +31,12 @@ void ControllerTask::runTask(){
     auto inSteering = redis.get("steering");
 
     if (inThrust && inSteering){
-        SPDLOG_INFO("Thrust: " + *inThrust);
-        SPDLOG_INFO("Steering: " + *inSteering);
+        //SPDLOG_INFO("Thrust: " + *inThrust);
+        //SPDLOG_INFO("Steering: " + *inSteering);
         
         UINT8 roverControl = 0b00000111;
-        INT8 thrust = std::stoi(inThrust.value());
-        INT8 steering = std::stoi(inSteering.value());
+        UINT8 thrust = (std::stoi(inThrust.value()) + 100) * 1.27;
+        UINT8 steering = (std::stoi(inSteering.value()) + 100) * 1.27;
 
         // Create Serial message
         auto msgControlRover = comm::serial::ControlRover();
@@ -47,27 +47,43 @@ void ControllerTask::runTask(){
         // Create IPC message for posix queue
         comm::ipc::PayloadType in_payload;
         comm::ipc::insert_package<std::vector<UINT8>>(in_payload, "Raw", txMsg);
-        comm::ipc::IPCMessage pMsg("TxMsg", in_payload);
-        std::vector<UINT8> serializedMsg = pMsg.serialize();
+        comm::ipc::IPCMessage ipcMsgControlRover("TxMsg", in_payload);
+        std::vector<UINT8> serializedMsg = ipcMsgControlRover.serialize();
 
         writeMsgQueue("/SlaveCommunicationTask_in", serializedMsg, serializedMsg.size());
     }
 
-    // Get messages from slave board
+    // Get serial rx messages from slave board
     while (true){
         char queue_slave_comm_out[MAX_MQ_MSG_SIZE+1];
         UINT16 queueSizeSlaveCommOut = readMsgQueue("/SlaveCommunicationTask_out", queue_slave_comm_out);
         if (queueSizeSlaveCommOut>0){
             // Start from index 2 since first two bytes are length of queue message
-            comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_slave_comm_out+2, queueSizeSlaveCommOut);
-            auto raw_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
+            comm::ipc::IPCMessage ipcMsgRxSerial = comm::ipc::deserialize(queue_slave_comm_out+2, queueSizeSlaveCommOut);
+            auto raw_rx_serial = ipcMsgRxSerial.getPackageValue<std::vector<UINT8>>("Raw");
             
-            std::cout << "Rx----> ";
-            for(auto &raw_byte:raw_bytes)
-            {
-                std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) raw_byte << " ";
+            std::string hex_string = miscs::Dec2HexString<uint8_t>(raw_rx_serial);
+            //SPDLOG_INFO("Rx----> " + hex_string);
+            comm::serial::SerialMessagePacket rx_serial_package(raw_rx_serial);
+
+            switch (rx_serial_package.MsgID){
+                case(comm::serial::SerialMessageID::ControlRoverID): 
+                    //comm::serial::ControlRover msg = comm::serial::ControlRover(rx_serial_package.MessagePayload); 
+                    break;
+                case(comm::serial::SerialMessageID::CalibrateRoverID): 
+                    //comm::serial::CalibrateRoverID msg = comm::serial::CalibrateRoverID(rx_serial_package.MessagePayload); 
+                    break;
+                case(comm::serial::SerialMessageID::RoverStateID): 
+                    //comm::serial::RoverStateID msg = comm::serial::RoverStateID(rx_serial_package.MessagePayload); 
+                    break;
+                case(comm::serial::SerialMessageID::RoverIMUID): 
+                    //comm::serial::RoverIMUID msg = comm::serial::RoverIMUID(rx_serial_package.MessagePayload); 
+                    break;
+                case(comm::serial::SerialMessageID::RoverErrorID): 
+                    //comm::serial::RoverErrorID msg = comm::serial::RoverErrorID(rx_serial_package.MessagePayload); 
+                    break;
             }
-            std::cout << std::endl;
+
         }
         else break;
     }

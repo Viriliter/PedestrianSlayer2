@@ -12,6 +12,8 @@
 #include "../utils/timing.h"
 #include "../utils/container.h"
 #include "../utils/types.h"
+#include "../utils/miscs.h"
+
 
 using namespace LibSerial;
 

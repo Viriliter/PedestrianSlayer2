@@ -20,10 +20,9 @@
 
 // Include Tasks
 #include "ControllerTask.hpp"
-//#include "NavigationTask.hpp"
+#include "NavigationTask.hpp"
 #include "SlaveCommunicationTask.hpp"
 #include "UserControlTask.hpp"
-//#include "NavigationTask.hpp"
 
 namespace tasks{
 
@@ -128,7 +127,7 @@ namespace tasks{
      * is called from multiple threads, it may block one of the threads
      * indefinitely.
      *
-     * If this function is never called after calling cactus_rt::SetUpTerminationSignalHandler,
+     * If this fingunction is never called after calling cactus_rt::SetUpTerminationSignalHandler,
      * the signal caught by this application will be ignored.
      *
      * @param app The application object

@@ -176,22 +176,21 @@ void SlaveCommunicationTask::runTask(){
         
         try{
             while (true){
-                std::cout << "--" << std::endl;
                 char queue_slave_comm_in[MAX_MQ_MSG_SIZE+1];
                 UINT16 queueSize = readMsgQueue("/SlaveCommunicationTask_in", queue_slave_comm_in);
-                std::cout << queueSize << std::endl;
                 if (queueSize>0){
                     // Start from index 2 since first two bytes are length of queue message
                     comm::ipc::IPCMessage pMsg2 = comm::ipc::deserialize(queue_slave_comm_in+2, queueSize);
                     auto tx_bytes = pMsg2.getPackageValue<std::vector<UINT8>>("Raw");
-                    std::cout << "<----Tx ";
                     for (auto const &tx_byte: tx_bytes){
-                        std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int) tx_byte << " ";
                         serialPort->Write(tx_bytes);
                     }
-                    std::cout << std::endl;
 
                     serialPort->FlushOutputBuffer();
+
+                    std::string hex_string = miscs::Dec2HexString<uint8_t>(tx_bytes);
+                    //SPDLOG_INFO("Tx----> " + hex_string);
+
                 }
                 else break;
             }

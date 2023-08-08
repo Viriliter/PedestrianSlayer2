@@ -237,7 +237,7 @@ namespace tasks{
             if (mq_attr_.mq_curmsgs<=0) return 0;
 
             size_t ret_rec = mq_receive(mqd_t_, queue, MAX_MQ_MSG_SIZE+1, NULL);
-            std::cout << "ret_rec: " << std::to_string(ret_rec) << std::endl;
+            mq_close(mqd_t_);
 
             /*
             struct timespec tm;
@@ -308,6 +308,7 @@ namespace tasks{
 
             int ret_rec = mq_send(mqd_t_, buf, MAX_MQ_MSG_SIZE, 0);
             delete[] buf;
+            mq_close(mqd_t_);
             
             if (ret_rec==-1){
                 int errvalue = errno;
@@ -317,6 +318,7 @@ namespace tasks{
                     mqd_t mqd_temp = mq_open(msgQueueName, O_RDONLY);
                     mq_receive(mqd_temp, temp, MAX_MQ_MSG_SIZE, NULL);
                     delete[] temp;
+                    mq_close(mqd_temp);
                     // Try to write again
                     writeMsgQueue(msgQueueName, queue, queueSize);
                 }

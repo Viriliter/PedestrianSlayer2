@@ -12,7 +12,9 @@
 #include "../modules/communication/IPCMessage.hpp"
 #include "../utils/container.h"
 #include "../utils/types.h"
+#include "../utils/miscs.h"
 #include "../modules/modes/Modes.hpp"
+
 
 using namespace sw::redis;
 

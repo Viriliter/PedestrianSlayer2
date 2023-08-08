@@ -6,14 +6,14 @@ TaskScheduler::TaskScheduler(){
     // Create Tasks
     //taskID | taskPeriod | taskPriority | estimatedTaskDuration | rtEnabled | cpuAffinityEnabled
     ControllerTask *controllerTask = new ControllerTask("ControllerCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
-    //NavigationTask *navigationTask = new NavigationTask<cactus_rt::schedulers::Other>();
+    NavigationTask *navigationTask = new NavigationTask("NavigationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(500));
     SlaveCommunicationTask *slaveCommunicationTask = new SlaveCommunicationTask("SlaveCommunicationTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
     //UserControlTask *userControlTask = new UserControlTask("UserControlTask", SCHEDULE_POLICY::OTHER, TASK_PRIORITY::RT_NORMAL_PRIORITY, timing::milisecondsToNanoseconds(100));
     
     // Add tasks into list
     
     addTask(controllerTask);
-    //addTask(navigationTask);
+    addTask(navigationTask);
     addTask(slaveCommunicationTask);
     //addTask(userControlTask);
     std::cout << controllerTask->taskID() << std::endl;

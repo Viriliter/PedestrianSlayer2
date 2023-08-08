@@ -2,6 +2,7 @@
 #define CONTAINER_H 
 
 #include <string>
+#include <cstdlib>
 
 namespace container{
     template <typename T>
@@ -17,7 +18,7 @@ namespace container{
 
     template <typename T>
     class LinkedList{
-        size_t count = 0;
+        uint32_t count = 0;
         Node<T> *head = NULL;
         Node<T> *tail = NULL;
         
@@ -32,15 +33,14 @@ namespace container{
 
             LinkedList(const LinkedList &srcLinkedList){
                 // Copy constructor creates the list by taking deep copy of source list
+                clear();
                 if (srcLinkedList.head == NULL){
-                    clear();
                     head = NULL;
                     tail = NULL;
                     return;
                 }
 
                 tail = new Node<T>();
-                head = new Node<T>();
                 Node<T> *ptrSrc = srcLinkedList.tail;
                 tail->val = ptrSrc->val;
                 tail->next = NULL;
@@ -62,15 +62,14 @@ namespace container{
 
             void operator=(LinkedList &srcLinkedList){
                 // Assignment operator creates the list by taking deep copy of source list
+                clear();
                 if (srcLinkedList.head == NULL){
-                    clear();
                     head = NULL;
                     tail = NULL;
                     return;
                 }
 
                 tail = new Node<T>();
-                head = new Node<T>();
                 Node<T> *ptrSrc = srcLinkedList.tail;
                 tail->val = ptrSrc->val;
                 tail->next = NULL;
@@ -144,7 +143,9 @@ namespace container{
             LinkedList<T> operator()(int begin, int final) {
                 // out is a subset in the range (begin, final) of original linked list. 
                 // element of final index is not included in the output.
-                if (begin < 0) throw "Negitive index is not permitable";
+                if (begin<0) begin = std::abs((int) count + begin) % count;
+                if (final<0) final = std::abs((int) count + final) % count;
+
                 if (count < final) throw "Out of bound error";
                 if (begin > final) throw "Starting index should be greater final index";
 
@@ -155,9 +156,9 @@ namespace container{
                     if (i>= begin && i<final){
                         out.add(ptr->val);                        
                     }
-                    else{
-                        break;
-                    }
+
+                    if (i>=final) break;
+
                     ptr = ptr->next;
                     i++;
                 }
@@ -167,7 +168,9 @@ namespace container{
             void operator()(int begin, int final, LinkedList<T> &out) const {
                 // out is a subset in the range (begin, final) of original linked list. 
                 // element of final index is not included in the output.
-                if (begin < 0) throw "Negitive index is not permitable";
+                if (begin<0) begin = std::abs((int) count + begin) % count;
+                if (final<0) final = std::abs((int) count + final) % count;
+
                 if (count < final) throw "Out of bound error";
                 if (begin > final) throw "Starting index should be greater final index";
 
@@ -177,9 +180,9 @@ namespace container{
                     if (i>= begin && i<final){
                         out.add(ptr->val);                        
                     }
-                    else{
-                        break;
-                    }
+
+                    if (i>=final) break;
+
                     ptr = ptr->next;
                     i++;
                 }
@@ -475,7 +478,7 @@ namespace container{
                 return (uint8_t) result;
             };
 
-            uint16_t toUint16(){
+            uint16_t toUint16(char endian='l'){
                 if (count<2) throw "type does not match with size of link list";
                 uint16_t result = 0;
                 Node<T> *ptr = tail;
@@ -601,7 +604,148 @@ namespace container{
                 return static_cast<double>(result);
             };
 
+            uint8_t toUint8L(){
+                if (count<1) throw "type does not match with size of link list";
+                uint8_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==1) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (uint8_t) result;
+            };
+
+            uint16_t toUint16L(){
+                if (count<2) throw "type does not match with size of link list";
+                uint16_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==2) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (uint16_t) result;
+            };
+
+            uint32_t toUint32L(){
+                if (count<4) throw "type does not match with size of link list";
+                uint32_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==4) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (uint32_t) result;
+            };
+
+            uint64_t toUint64L(){
+                if (count<8) throw "type does not match with size of link list";
+                uint64_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==8) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (uint64_t) result;
+            };
+
+            int8_t toInt8L(){
+                if (count<1) throw "type does not match with size of link list";
+                int8_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==4) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (int8_t) result;
+            };
+
+            int16_t toInt16L(){
+                if (count<2) throw "type does not match with size of link list";
+                int16_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==2) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (int16_t) result;
+            };
+
+            int32_t toInt32L(){
+                if (count<4) throw "type does not match with size of link list";
+                int32_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==4) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (int32_t) result;
+            };
+
+            int64_t toInt64L(){
+                if (count<8) throw "type does not match with size of link list";
+                int64_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==8) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return (int64_t) result;
+            };
+
+            long toFloatL(){
+                if (count<4) throw "type does not match with size of link list";
+                int32_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==4) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return static_cast<float>(result);
+            };
+
+            long long toDoubleL(){
+                if (count<8) throw "type does not match with size of link list";
+                int64_t result = 0;
+                Node<T> *ptr = head;
+                size_t i = 0;
+                while(ptr != NULL){
+                    if (i==8) break;
+                    result |= (ptr->val)<<(8*i);
+                    ptr = ptr->prev;
+                    i++;
+                }
+                return static_cast<double>(result);
+            };
+
     };
+
 }
 #endif  // CONTAINER_H
 

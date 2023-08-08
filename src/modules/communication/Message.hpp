@@ -24,6 +24,18 @@ namespace comm::serial{
             container::LinkedList<UINT8> MessagePayload{};  // Store message payload in Linked List since its size may differ
             UINT8 Checksum = 0x00;
 
+            SerialMessagePacket(){};
+
+            SerialMessagePacket(std::vector<UINT8> &raw_message){
+                SOM = raw_message.at(0);
+                MsgSize = raw_message.at(1);
+                MsgID = raw_message.at(2);
+                for(int i=3; i<raw_message.size()-1; i++){
+                    MessagePayload.push(raw_message.at(i));
+                }
+                Checksum = raw_message.at(raw_message.size()-1);
+            }
+
             std::string toString(){
                 std::string result;
 
@@ -156,6 +168,15 @@ namespace comm::serial{
             setPayloadSize(3);
         };
 
+        ControlRover(container::LinkedList<UINT8> &payload){
+            // Message Header
+            msgName = "ControlRover";
+            msgID = SerialMessageID::ControlRoverID;
+            setPayloadSize(3);
+            msgPayload = payload;
+            parsePayload();
+        };
+
         void addPayload(UINT8 roverControl, INT8 steeringAngle, INT8 thrustDutyCycle){
             msgPayload.add(roverControl); 
             msgPayload.add(steeringAngle); 
@@ -183,6 +204,15 @@ namespace comm::serial{
             setPayloadSize(13);
         };
         
+                
+        CalibrateRover(container::LinkedList<UINT8> &payload){
+            msgName = "CalibrateRover";
+            msgID = SerialMessageID::CalibrateRoverID;
+            setPayloadSize(13);
+            msgPayload = payload;
+            parsePayload();
+        };
+
         void addPayload(FLOAT thrustP, FLOAT thrustI, FLOAT thrustD, INT8 steeringOffset){
             msgPayload.add(thrustP); 
             msgPayload.add(thrustI);
@@ -210,6 +240,14 @@ namespace comm::serial{
             setPayloadSize(2);
         };
         
+        RoverState(container::LinkedList<UINT8> &payload){
+            msgName = "RoverState";
+            msgID = SerialMessageID::RoverStateID;
+            setPayloadSize(2);
+            msgPayload = payload;
+            parsePayload();
+        };
+
         void addPayload(UINT8 roverControl, UINT8 steeringAngle, UINT8 thrustDutyCycle){
             msgPayload.add(roverState); 
             msgPayload.add(msgCounter); 
@@ -238,6 +276,14 @@ namespace comm::serial{
             msgName = "RoverIMU";
             msgID = SerialMessageID::RoverIMUID;
             setPayloadSize(36);
+        };
+
+        RoverIMU(container::LinkedList<UINT8> &payload){
+            msgName = "RoverIMU";
+            msgID = SerialMessageID::RoverIMUID;
+            setPayloadSize(36);
+            msgPayload = payload;
+            parsePayload();
         };
 
         void addPayload(UINT8 roverControl, UINT8 steeringAngle, UINT8 thrustDutyCycle){
@@ -276,6 +322,14 @@ namespace comm::serial{
             setPayloadSize(2);
         };
 
+        RoverError(container::LinkedList<UINT8> &payload){
+            msgName = "RoverError";
+            msgID = SerialMessageID::RoverErrorID;
+            setPayloadSize(2);
+            msgPayload = payload;
+            parsePayload();
+        };
+
         void addPayload(UINT8 roverControl, UINT8 steeringAngle, UINT8 thrustDutyCycle){
             msgPayload.add(errorCode & 0x00FF);
             msgPayload.add((errorCode & 0xFF00)>>8);
@@ -287,6 +341,7 @@ namespace comm::serial{
     };
 
     // endregion
+    typedef std::variant<SerialMessage*, CalibrateRover*, RoverState*, RoverIMU*, RoverError*> SerialMessageTypes;
 }
 
 #endif  // MESSAGE_HPP

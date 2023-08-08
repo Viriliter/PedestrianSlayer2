@@ -33,6 +33,37 @@ void SerialMessage::decodeMessage(SerialMessagePacket &messagePacket){
     parsePayload();
 };
 
+UINT8 decodeMessage(SerialMessagePacket &messagePacket, SerialMessageTypes &decodedMsg){
+    if (messagePacket.MsgSize==0) throw "Empty message cannot be decoded";
+    
+    // Check Header
+    if (messagePacket.SOM != 0xAA) throw("SOM does not match");
+    
+    // Check Checksum
+    if (!messagePacket.checkChecksum()) throw ("CRC dismatch");
+
+    // TODO implement visitor pattern for message specific decoding
+    if(messagePacket.MsgID == SerialMessageID::ControlRoverID){
+        ControlRover *msg = new ControlRover(messagePacket.MessagePayload); decodedMsg = msg;
+    }
+    else if(messagePacket.MsgID == SerialMessageID::CalibrateRoverID){
+        CalibrateRover *msg = new CalibrateRover(messagePacket.MessagePayload); decodedMsg = msg;
+    }
+    else if(messagePacket.MsgID == SerialMessageID::RoverStateID){
+        RoverState *msg = new RoverState(messagePacket.MessagePayload); decodedMsg = msg;
+    }
+    else if(messagePacket.MsgID == SerialMessageID::RoverIMUID){
+        RoverIMU *msg = new RoverIMU(messagePacket.MessagePayload); decodedMsg = msg;
+    }
+    else if(messagePacket.MsgID == SerialMessageID::RoverErrorID){
+        RoverError *msg = new RoverError(messagePacket.MessagePayload); decodedMsg = msg;
+    }
+    else{
+        SerialMessage *msg = NULL; decodedMsg = msg;
+    }
+    return messagePacket.MsgID;
+}
+
 std::vector<UINT8> SerialMessage::encodeMessage(){
     if (msgSize==0) throw ("Empty message cannot be encoded");
 
