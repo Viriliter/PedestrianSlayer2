@@ -1,0 +1,6 @@
+# Do not include build files
+build/
+
+# Do not include ide settings
+.vscode/
+.vs/
