@@ -43,6 +43,7 @@
         background: #ffa62b;
         color: #ffffff;
         border: 1px solid #ff6a00;
+
         border-radius: 5px;
     }
 
@@ -88,6 +89,34 @@
         border-radius: 5px;
     }
 
+    .btn-wp-edit {
+        background-color: #ffffff;
+        color: #198754;
+        border: solid 2px #198754;
+        border-radius: 5px;
+    }
+
+    .btn-wp-edit:hover {
+        background-color: #198754;
+        color: #ffffff;
+        border: solid 2px #198754;
+        border-radius: 5px;
+    }
+
+    .btn-wp-edit-2 {
+        background-color: #ffffff;
+        color: #ffbf00;
+        border: solid 2px #ffbf00;
+        border-radius: 5px;
+    }
+
+    .btn-wp-edit-2:hover {
+        background-color: #ffbf00;
+        color: #ffffff;
+        border: solid 2px #ffbf00;
+        border-radius: 5px;
+    }
+
 </style>
 
 <body>
@@ -99,7 +128,7 @@
         <div class="row">
             <div class="col-1" id="streamContainer" style="width:50%; height: inherit;">
                 <center>
-                    <img id="rover-stream" src="{{ url_for('video_feed') }}" style="width: 100%; height: fit-content;">
+                    <img id="rover-stream" style="width: 100%; height: 300px;">
                 </center>
             </div>
             <div class="col-2" id="mapContainer" style="width:50%; height: inherit; vertical-align:center; margin-left: auto; margin-right: auto;">
@@ -212,7 +241,19 @@
                         <input id="buttonExportWaypoints" type="file" style="visibility: hidden; width: 0px; height: 0px;" />
                     </div>
                 </div>
-
+                <div class="row">
+                    <div class="col">
+                        <p style="text-align: center; color:#f07746;"><strong>Home Position</strong></p>
+                        <div class="row">
+                            <p class="col" style="text-align: center; color:#f07746;">Latitude</p>
+                            <input class="col" id="inputHomeLatitude" type="number" min="-180" max="180" step="1" value="0" disabled style="width: 29%; height: 30px;"></input>
+                            <p class="col" style="text-align: center; color:#f07746;">Longitude</p>
+                            <input class="col" id="inputHomeLongitude" type="number" min="-180" max="180" step="1" value="0" disabled style="width: 29%; height: 30px;"></input>
+                            <button class="btn-wp-edit" type="submit" title="Edit Home" onclick="onClickEditHomeWaypoint(this)" style="width: 80px; height: 60px; align-content: center;"><strong>Edit</strong></button>
+                            <button class="btn-wp-edit-2" type="submit" title="Set Rover Position as Home" onclick="onClickSetRoverPositionAsHome(this)" style="width: 180px; height: 60px; align-content: center;"><strong>Set Rover Position as Home</strong></button>
+                        </div>
+                    </div>
+                </div>
                 <div style="max-height: 170px; margin-left: auto; margin-right: 0; overflow: auto; overflow-x:hidden;">
                     <table id="table_waypoints" class="sortable resizableHeader" style="width: 100%; margin-top:5px;">
                         <thead>
@@ -633,7 +674,7 @@
             else {
                 element.textContent = "Set to Manuel Drive"
             }
-            const request = new XMLHttpRequest()
+            const request = new XMLHttpRequest().setAttribute('disabled', '');
             request.open("POST", "/rover_control_mode_switch")
             request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
             request.send(JSON.stringify({ "isManuelModeActive": isManuelModeActive }));
@@ -785,9 +826,29 @@
             appendNewWaypointIntoList(inputID, inputLatitude, inputLongitude, inputAction);
         }
 
-        function onClickClearAllWaypoints(sender){
+        function onClickEditHomeWaypoint(sender){
+            var elemLat = document.getElementById('inputHomeLatitude');
+            var elemLon = document.getElementById('inputHomeLongitude');
+            
+            if (elemLat.getAttribute('disabled') == ''){
+                elemLat.removeAttribute('disabled');
+                elemLon.removeAttribute('disabled');
+                console.log("not disabled");
+            }
+            else{
+                elemLat.setAttribute('disabled', '');
+                elemLon.setAttribute('disabled', '');
+                console.log("disabled");
+            }
         }
 
+        function onClickSetRoverPositionAsHome(sender){
+            
+        }
+
+        function onClickClearAllWaypoints(sender){
+        }
+        
         function appendNewWaypointIntoList(ID, Lat, Lon, Action) {
             var tbodyRef = document.getElementById('table_waypoints').getElementsByTagName('tbody')[0];
 
@@ -807,8 +868,19 @@
             cell_2.appendChild(newLongitude);
 
             var cell_3 = newRow.insertCell();
-            var newAction = document.createTextNode(`${Action}`);
-            cell_3.appendChild(newAction);
+            var newActionSelect = document.createElement("select");
+            
+            // Add all action options
+            for (option of ["Pass", "Wait", "Return"]){
+                var newOption = document.createElement("option");
+                newOption.value = option;
+                newOption.text = option;
+                newActionSelect.appendChild(newOption);
+            }
+            // Select option 
+            newActionSelect.value = Action;
+
+            cell_3.appendChild(newActionSelect);
         }
 
         function clearWaypointFromList(ID) {

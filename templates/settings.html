@@ -20,21 +20,37 @@
 
             <div class="mySlides">
                 <div class="text">Hold and rotate your device as follows, then click "Next" button</div>
+
+                <p style="text-align: center;">
+                    Max Steering Limit: <span id="orient_max_steering_limit">0</span> |
+                    Min Steering Limit: <span id="orient_min_steering_limit">0</span> |
+                </p>
             </div>
 
             <div class="mySlides">
                 <div class="text">Hold and rotate your device as follows, then click "Next" button</div>
+
+                <p style="text-align: center;">
+                    Max Thrust Limit: <span id="orient_max_thrust_limit">0</span> |
+                    Min Thrust Limit: <span id="orient_min_thrust_limit">0</span> |
+                </p>
             </div>
 
             <div class="mySlides">
                 <div class="text">Hold and rotate your device as follows, then click "Finish" button</div>
+
+                <p style="text-align: center;">
+                    Max Compass Limit: <span id="orient_max_compass_limit">0</span> |
+                    Min Compass Limit: <span id="orient_min_compass_limit">0</span> |
+                </p>
             </div>
 
             <!-- Next and previous buttons -->
         </div>
         <br>
         <div style="text-align:center">
-            <button id="buttonCalibrateNext" class="control-button button" onclick="onCalibrationStepClick()">Calibrate (0/3)</button>
+            <button id="buttonCalibrateCancel" class="button-cancel" onclick="onCalibrationStepCancel()">Cancel</button>
+            <button id="buttonCalibrateNext" class="button" onclick="onCalibrationStepClick()">Calibrate (0/3)</button>
         </div>
 
         <!-- The dots/circles -->
@@ -87,67 +103,121 @@
         let newCalibrationCompassRangeMin = 0;
         let newCalibrationCompassRangeMax = 0;
 
+        function getRotationMatrix(alpha, beta, gamma) {
+            const degtorad = Math.PI / 180; // Degree-to-Radian conversion
+            var cX = Math.cos(beta * degtorad);
+            var cY = Math.cos(gamma * degtorad);
+            var cZ = Math.cos(alpha * degtorad);
+            var sX = Math.sin(beta * degtorad);
+            var sY = Math.sin(gamma * degtorad);
+            var sZ = Math.sin(alpha * degtorad);
+
+            var m11 = cZ * cY - sZ * sX * sY;
+            var m12 = - cX * sZ;
+            var m13 = cY * sZ * sX + cZ * sY;
+
+            var m21 = cY * sZ + cZ * sX * sY;
+            var m22 = cZ * cX;
+            var m23 = sZ * sY - cZ * cY * sX;
+
+            var m31 = - cX * sY;
+            var m32 = sX;
+            var m33 = cX * cY;
+
+            return [
+                m13, m11, m12,
+                m23, m21, m22,
+                m33, m31, m32
+            ];
+        };
+
+        function getEulerAngles(matrix) {
+            var radtodeg = 180 / Math.PI; // Radian-to-Degree conversion
+            var sy = Math.sqrt(matrix[0] * matrix[0] + matrix[3] * matrix[3]);
+
+            var singular = sy < 1e-6; // If
+
+            if (!singular) {
+                var x = Math.atan2(matrix[7], matrix[8]);
+                var y = Math.atan2(-matrix[6], sy);
+                var z = Math.atan2(matrix[3], matrix[0]);
+            } else {
+                var x = Math.atan2(-matrix[5], matrix[4]);
+                var y = Math.atan2(-matrix[6], sy);
+                var z = 0;
+            }
+            return [radtodeg * x, radtodeg * y, radtodeg * z];
+        };
+
         window.addEventListener('deviceorientation', handleOrientation);
         function handleOrientation(event) {
             const alpha = event.alpha;
             const beta = event.beta;
-            const gamma = event.gamma;
+            const gamma = event.gamma;onCalibrationStepCancel
 
             if (alpha == null && beta == null && gamma == null)
                 return
-
-            document.getElementById("orient_alpha").innerText = alpha.toFixed(2);
-            document.getElementById("orient_beta").innerText = beta.toFixed(2);
-            document.getElementById("orient_gamma").innerText = gamma.toFixed(2);
-
+            
             var rotation = getEulerAngles(getRotationMatrix(alpha, beta, gamma));
             var euler_steering = rotation[0];
             var euler_tilt = rotation[1];
             var euler_compass = rotation[2];
 
             if (!isCalibrationActive) {
-                let newCalibrationSteeringRangeMin = euler_steering;
-                let newCalibrationSteeringRangeMax = euler_steering;
-                let newCalibrationTiltRangeMin = euler_tilt;
-                let newCalibrationTiltRangeMax = euler_tilt;
-                let newCalibrationCompassRangeMin = euler_compass;
-                let newCalibrationCompassRangeMax = euler_compass;
+                newCalibrationSteeringRangeMin = euler_steering;
+                newCalibrationSteeringRangeMax = euler_steering;
+                newCalibrationTiltRangeMin = euler_tilt;
+                newCalibrationTiltRangeMax = euler_tilt;
+                newCalibrationCompassRangeMin = euler_compass;
+                newCalibrationCompassRangeMax = euler_compass;
+                return;
             }
-            else return;
 
             if (isCalibrationSteeringActive) {
                 newCalibrationSteeringRangeMax = euler_steering > newCalibrationSteeringRangeMax ? euler_steering : newCalibrationSteeringRangeMax; 
                 newCalibrationSteeringRangeMin = euler_steering < newCalibrationSteeringRangeMin ? euler_steering : newCalibrationSteeringRangeMin; 
+                document.getElementById("orient_max_steering_limit").innerText = newCalibrationSteeringRangeMax.toFixed(2);
+                document.getElementById("orient_min_steering_limit").innerText = newCalibrationSteeringRangeMin.toFixed(2);
             };
             if (isCalibrationTiltActive) {
                 newCalibrationTiltRangeMax = euler_tilt > newCalibrationTiltRangeMax ? euler_tilt : newCalibrationTiltRangeMax;
                 newCalibrationTiltRangeMin = euler_tilt < newCalibrationTiltRangeMin ? euler_tilt : newCalibrationTiltRangeMin; 
+                document.getElementById("orient_max_thrust_limit").innerText = newCalibrationTiltRangeMax.toFixed(2);
+                document.getElementById("orient_min_thrust_limit").innerText = newCalibrationTiltRangeMin.toFixed(2);
             };
             if (isCalibrationCompassActive) {
                 newCalibrationCompassRangeMax = euler_compass > newCalibrationCompassRangeMax ? euler_compass : newCalibrationCompassRangeMax;
                 newCalibrationCompassRangeMin = euler_compass < newCalibrationCompassRangeMin ? euler_compass : newCalibrationCompassRangeMin; 
+                document.getElementById("orient_max_compass_limit").innerText = newCalibrationCompassRangeMax.toFixed(2);
+                document.getElementById("orient_min_compass_limit").innerText = newCalibrationCompassRangeMin.toFixed(2);
             };
         };
 
         function onCalibrationStepClick(){
             var element = document.getElementById("buttonCalibrateNext");
-            console.log(slideIndex);
+
             if (slideIndex == 1) {
                 onCalibrationStep1();
                 plusSlides(1);
                 element.innerText = "Next (1/3)";
+                document.getElementById("buttonCalibrateCancel").style.visibility = 'visible';;
+                document.getElementById("buttonCalibrateCancel").style.display = 'inline-block';;
             }
 
             else if (slideIndex == 2) {
                 onCalibrationStep2();
                 plusSlides(1);
                 element.innerText = "Next (2/3)";
+                document.getElementById("buttonCalibrateCancel").style.visibility = 'visible';;
+                document.getElementById("buttonCalibrateCancel").style.display = 'inline-block';;
             }
 
             else if (slideIndex == 3) {
                 onCalibrationStep3();
                 plusSlides(1);
                 element.innerText = "Finish (3/3)";
+                document.getElementById("buttonCalibrateCancel").style.visibility = 'visible';;
+                document.getElementById("buttonCalibrateCancel").style.display = 'inline-block';;
             }
 
             else if (slideIndex == 4) {
@@ -155,39 +225,57 @@
                 slideIndex = 1;
                 showSlides(1);
                 element.innerText = "Calibrate (0/3)";
+                document.getElementById("buttonCalibrateCancel").style.visibility = 'hidden';;
+                document.getElementById("buttonCalibrateCancel").style.display = 'none';;
             }
+            
             else {
                 showSlides(1);
                 element.innerText = "Calibrate (0/3)";
+                document.getElementById("buttonCalibrateCancel").style.visibility = 'hidden';;
+                document.getElementById("buttonCalibrateCancel").style.display = 'none';;
             }
         }
 
+        function onCalibrationStepCancel(){
+            isCalibrationActive = false;
+            isCalibrationSteeringActive = false;
+            isCalibrationTiltActive = false;
+            isCalibrationCompassActive = false;
+            slideIndex = 1;
+            showSlides(1);
+            var element = document.getElementById("buttonCalibrateNext");
+            element.innerText = "Calibrate (0/3)";
+            document.getElementById("buttonCalibrateCancel").style.visibility = 'hidden';;
+            document.getElementById("buttonCalibrateCancel").style.display = 'none';;
+        }
+
         function onCalibrationStep1() {
-            let isCalibrationActive = true;
-            let isCalibrationSteeringActive = true;
-            let isCalibrationTiltActive = false;
-            let isCalibrationCompassActive = false;
+            isCalibrationActive = true;
+            isCalibrationSteeringActive = true;
+            isCalibrationTiltActive = false;
+            isCalibrationCompassActive = false;
         }
 
         function onCalibrationStep2() {
-            let isCalibrationSteeringActive = false;
-            let isCalibrationTiltActive = true;
-            let isCalibrationCompassActive = false;
-
+            isCalibrationActive = true;
+            isCalibrationSteeringActive = false;
+            isCalibrationTiltActive = true;
+            isCalibrationCompassActive = false;
         }
 
         function onCalibrationStep3() {
-            let isCalibrationSteeringActive = false;
-            let isCalibrationTiltActive = false;
-            let isCalibrationCompassActive = true;
-
+            isCalibrationActive = true;
+            isCalibrationSteeringActive = false;
+            isCalibrationTiltActive = false;
+            isCalibrationCompassActive = true;
         }
 
         function onCalibrationStep4() {
-            let isCalibrationActive = false;
-            let isCalibrationSteeringActive = false;
-            let isCalibrationTiltActive = false;
-            let isCalibrationCompassActive = false;
+            isCalibrationActive = false;
+            isCalibrationSteeringActive = false;
+            isCalibrationTiltActive = false;
+            isCalibrationCompassActive = false;
 
             // Store Calibration values
             localStorage.setItem("CalibrationSteeringRangeMax", newCalibrationSteeringRangeMax);
@@ -198,6 +286,7 @@
 
             localStorage.setItem("CalibrationCompassRangeMax", newCalibrationCompassRangeMax);
             localStorage.setItem("CalibrationCompassRangeMin", newCalibrationCompassRangeMin);
+
         }
 
         function onClearCalibration() {

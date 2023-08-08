@@ -84,8 +84,9 @@ def gen_frames():
 
 @app.route('/video_feed')
 def video_feed():
-    cv2.waitKey(100)
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    #cv2.waitKey(100)
+    #return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return
 
 
 if __name__ == "__main__":
@@ -104,4 +105,4 @@ if __name__ == "__main__":
     if os.path.exists(context[0]) and os.path.exists(context[1]):
         app.run(host="0.0.0.0", debug=True, ssl_context=context)
     else:
-        app.run(host="0.0.0.0", debug=True)
+        app.run(host="0.0.0.0", debug=True, ssl_context="adhoc")
