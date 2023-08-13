@@ -4,8 +4,6 @@
 
 #include <opencv2/opencv.hpp> 
 #include "spdlog/spdlog.h"
-#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
-#include "spdlog/fmt/ostr.h" // support for user defined types
 
 #include "tasks/TaskScheduler.hpp"
 #include "modules/navigation/LaneDetector.hpp"
