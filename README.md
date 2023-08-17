@@ -1,7 +1,7 @@
 # BUILDING MINIMAL IMAGE FOR PEDESTRIAN SLAYER 2 USING YOCTO PROJECT
-This documentaton describes how a yocto project is built on Raspberry Pi 3 for Pedestrian Slayer 2. Documentation covers from installing requred meta layers essential for building Yocto project and some customisations like installing external meta layers and libraries to the target system.
+This documentation describes how a Yocto project is built on a Raspberry Pi 3 for Pedestrian Slayer 2. It covers from installing essential meta-layers for Raspberry Pi to some project oriented customizations like adding external meta-layers and libraries.
 
-## DOWNLOAD POKY AND METADATA LAYERS
+## Download Poky and Metadata Layers
 
 ```shell
 git clone -b dunfell git://git.yoctoproject.org/poky.git
@@ -14,12 +14,12 @@ git clone -b dunfell git://git.yoctoproject.org/meta-raspberrypi.git
 git clone -b dunfell git://git.openembedded.org/meta-openembedded
 ```
 
-## CREATE BUILD FOLDER
+## Create Build Folder
 ```shell
 source poky/oe-init-build-env
 ```
-## ADD ESSENTIAL LAYERS
-Add following meta layers inside ```~/build``` with following commands:
+## Add Essential Layers
+Add following meta-layers inside ```~/build``` with following commands:
 
 ```shell
 bitbake-layers add-layer ../meta-openembedded/meta-oe
@@ -29,10 +29,10 @@ bitbake-layers add-layer ../meta-openembedded/meta-networking
 bitbake-layers add-layer ../meta-raspberrypi
 bitbake-layers show-layers
 ```
-## SET BUILD CONFIGS
-```~/build/conf/local.conf```
+## Set Essential Build Configs
+* Make following modifications inside ```/build/conf/local.conf``` to customize image for Raspberry Pi 3:
 
-```
+```bash
 # target
 MACHINE ?= "raspberrypi3-64"
 ...
@@ -61,7 +61,7 @@ CORE_IMAGE_EXTRA_INSTALL_append = " nano"
 ### Adding Python Interpretter and Its Libraries
 Add following lines in ```local.conf``` file:
 
-```
+```bash
 ...
 IMAGE_INSTALL_append = " python3"
 IMAGE_INSTALL_append = " python3-pip"
@@ -72,24 +72,15 @@ IMAGE_INSTALL_append = " python3-pyserial python3-numpy"
 
 ### Adding Make and GCC Compiler
 Add following line in ```local.conf``` file:
-```
+```bash
 ...
 EXTRA_IMAGE_FEATURES_append = " tools-sdk tools-debug"
 ...
 ```
-### Adding SQLite
-Add following line in ```local.conf``` file:
-```
-...
-IMAGE_INSTALL_append = " sqlite3"
-...
-```
-[Source: https://stackoverflow.com/questions/40017676/how-to-add-libsqlite3-dev-to-yocto-kernel-for-sqlite3-c-program]
-
 
 ### Adding GIT Support
 Add following line in ```local.conf``` file:
-```
+```bash
 ...
 IMAGE_INSTALL_append = " git"
 ...
@@ -98,7 +89,7 @@ IMAGE_INSTALL_append = " git"
 
 ### Adding systemd Support
 Add following line in ```local.conf``` file:
-```
+```bash
 ...
 DISTRO_FEATURES_append = " systemd"
 VIRTUAL-RUNTIME_init_manager = "systemd"
@@ -108,71 +99,34 @@ VIRTUAL-RUNTIME_initscripts = ""
 ```
 [source: https://www.instructables.com/Building-GNULinux-Distribution-for-Raspberry-Pi-Us/]
 
-### Adding ROS2 Meta-Layer (Not implemented)
-* Download meta-ros layer (for dunfell branch)
-```shell
-git clone -b dunfell https://github.com/ros/meta-ros.git
-```
-
-* Add followings in end of ```~/build/conf/bblayers.conf```
-```
-# define the ROS 2 Yocto target release
-ROS_OE_RELEASE_SERIES = "dunfell"
-
-# define ROS 2 distro
-ROS_DISTRO = "foxy"
-```
-
-* To add meta-layers into the project run following commands:
-```shell
-bitbake-layers add-layer ../meta-ros/meta-ros-backports-hardknott
-bitbake-layers add-layer ../meta-ros/meta-ros-backports-gatesgarth
-bitbake-layers add-layer ../meta-ros/meta-ros-common
-bitbake-layers add-layer ../meta-ros/meta-ros2
-bitbake-layers add-layer ../meta-ros/meta-ros2-foxy
-bitbake-layers show-layers
-```
-
-* New layers will be shown on  ```~/build/conf/bblayers.conf```.
-
-* Run following command on the terminal:
-```shell
-bitbake -p ros-core
-```
-
-[source: https://github.com/ros/meta-ros/wiki/OpenEmbedded-Build-Instructions]
-
-### Adding ROS2 Libraries (Not implemented)
-* Add following line in ```local.conf``` file:
-```
+### Adding C++ Libraries
+Add following line in ```local.conf``` file:
+```bash
 ...
-IMAGE_INSTALL_append = " ros2launch"
-IMAGE_INSTALL_append = " screen"
 IMAGE_INSTALL_append = " libc-dev libstdc++-dev"
-IMAGE_INSTALL_append = " libc6-dev"
 ...
 ```
 
-## DOWNLOAD PACKAGES
+## Download Packages
 ```shell
 bitbake core-image-base --runonly=fetch
 ```
 
-## ADD PREEMPT_RT KERNAL PATCH 
+## Add PREEMPT_RT Kernal Patch 
 
 * Add following line for realtime support for Raspberry Pi in ```local.conf``` file:
-```
+```bash
 ...
 PREFERRED_PROVIDER_virtual/kernel = "linux-raspberrypi-rt"
 ...
 ```
 
 * After booting the target with new image, kernel version will be something like that:
-```
+```bash
 Linux raspberrypi3 4.19.71-rt24-v7 #1 SMP PREEMPT RT Tue Dec 17 14:50:30 UTC 2019 armv7l armv7l armv7l GNU/Linux
 ```
 
-## BUILD THE IMAGE
+## Build the Image
 * Before building, make sure every configuration has been implemented. Check build configuration with following command:
 ```shell
 bitbake core-image-base -n
@@ -188,39 +142,14 @@ bitbake core-image-base
 
 * Use BelanEtcher to flash the image to SD Card or eMMC
 
-
 [source: https://www.codeinsideout.com/blog/yocto/raspberry-pi/?utm_source=pocket_reader#download-poky-and-metadata-layers]
 
 ---
-# CONFIGURING YOCTO PROJECT
+# ADDITIONAL CONFIGURATIONS
 
-## DISABLING ROOT SSH LOGIN OVER NETWORK (Before Image Build)
-
-* Go to the path: ```poky/meta/recipes-core/dropbear/dropbear```.  The ```init``` file is presented in dropbear folder.
-
-* Add ```"-g -s"``` option in DROPBEAR_EXTRA_ARGS. The result is as follows:
-
-```
-...
-DROPBEAR_EXTRA_ARGS="-g -s"
-...
-```
-
-Note:
-
--w:  Disallow root logins
-
--s:  Disable password logins
-
--g:  Disable password logins for root
-
-[source: http://embeddedguruji.blogspot.com/2019/02/disabling-root-ssh-login-over-network.html]
-
-
-## ADD WIFI AND BLUETOOTH SUPPORT FOR RPI (Before Image Build)
+## Add WIFI and Bluetooth Support for RPI (Before Image Build)
 * Add following lines in ```local.conf``` file to add wifi and bluetooth support:
-
-```
+```bash
 ...
 IMAGE_INSTALL_append = " linux-firmware-bcm43430"
 IMAGE_INSTALL_append = " i2c-tools bridge-utils hostapd dhcp-server iptables wpa-supplicant"
@@ -229,35 +158,34 @@ IMAGE_INSTALL_append = " bluez5"
 ```
 
 * Following line should also be added in ```local.conf```:
-```
+```bash
 ...
 DISTRO_FEATURES_append = " bluetooth wifi"
 ...
 ```
 
-## ENABLE GPIO SUPPORT FOR RPI (Before Image Build)
+## Enable GPIO Support for RPI (Before Image Build)
 * Add following line in ```local.conf``` file to add gpio support:
-
-```
+```bash
 ...
 IMAGE_INSTALL_append = " rpi-gpio rpio pi-blaster"
 ...
 ```
 [source: https://layers.openembedded.org/layerindex/branch/dunfell/layer/meta-raspberrypi/]
 
-## ENABLE I2C SUPPORT FOR RPI (Before Image Build)
-* Add following line in ```local.conf``` file to add i2c support:
-
-```
+## Enable I2C Support for RPI
+* Add following line in ```local.conf``` file to add I2C support:
+```bash
 ...
 ENABLE_I2C = "1"
 KERNEL_MODULE_AUTOLOAD_rpi += " i2c-dev"
 ...
 ```
 
-## INCLUDE APT AND APT-GET PACKAGE MANAGERS (Before Image Build)
-* Add example line in ```local.conf``` file to rename the output image:
-```
+## Include Debian Package Manager
+* Debian package manager is useful to instal additional software packages to the target system. ```apt-get``` or ```àpt``` commands can be used to download desired packages.
+* Add example line in ```local.conf``` file to add debian package support :
+```bash
 ...
 PACKAGE_CLASSES += " package_deb"
 ...
@@ -266,40 +194,28 @@ EXTRA_IMAGE_FEATURES_append = " package-management"
 ```
 [source: https://docs.yoctoproject.org/2.1/ref-manual/ref-manual.html#var-PACKAGE_CLASSES]
 
-
-## SET NAME OF OUTPUT IMAGE (Before Image Build)
-* Add example line in ```local.conf``` file to rename the output image:
-```
+* To include ```apt``` command, add following line in  ```local.conf``` file:
+```bash
 ...
-IMAGE_NAME = "${IMAGE_BASENAME}-${MACHINE}-${DATETIME}"
+IMAGE_INSTALL_append += " apt"
 ...
 ```
-[source: https://www.codeinsideout.com/blog/yocto/concepts/#bitbake]
-
-Note that adding timestamp may results in following error in multiple times:
-
-<span style="color: red" >When reparsing xxx, the basehash value changed from yyy to zzz. The metadata is not deterministic and this needs to be fixed.</span>
-
-
-## CHANGE SPLASH LOGO (Before Image Build)
-In order to change splash logo, modify the content of ```psplash-poky-img.h``` located in ```/poky/meta-poky/recipes-core/psplash```.
-[source: https://archive.fosdem.org/2018/schedule/event/rt_linux_with_yocto/attachments/slides/2684/export/events/attachments/rt_linux_with_yocto/slides/2684/Yocto_RT.pdf]
 
 ## CHANGE SPLASH LOGO (Easy Way - Before Image Build)
-* Clone meta-splash layer
-```
+* Clone meta-splash layer with following command:
+```shell
 git clone https://github.com/hamzamac/meta-splash.git
 ```
-Replace the default ```logo.png``` image in ```meta-splash/recipes-core/psplash/files``` with your logo image with name logo.png
+* Replace the default ```logo.png``` image in ```meta-splash/recipes-core/psplash/files``` with your logo.
+
 * Add meta layer in your yocto project
-```
+```shell
     bitbake-layers add-layer ../meta-splash
 ```
- 
+* Additional customizations for splash screen are available (changing color of loading bar etc.). 
 [source: https://dev.to/makame/customize-boot-splash-screen-in-yocto-3bip]
 
-
-## SETTING STATIC IP (Before Image Build)
+## Setting Static IP
 * It is possible to make an instruction that changes the content of ```/etc/network/interfaces``` of target image during rootfs install. To do this, it is necessary to create a custom meta-layer called ``meta-custom``` with running following command on the terminal:
  ```shell
  bitbake-layers create-layer ../meta-custom
@@ -342,7 +258,7 @@ bitbake-layers add-layer ../meta-custom
 ```
 
 * Then, add fixed-ip support in ```local.conf```:
-```
+```bash
 ...
 USER_CLASSES_append = " fixed-ip"
 ...
@@ -350,62 +266,7 @@ USER_CLASSES_append = " fixed-ip"
 
 [source: https://docs.windriver.com/bundle/Wind_River_Linux_Platform_Developers_Guide_LTS_21/page/cno1630363904950.html]
 
-## SETTING STATIC IP (After Image Build)
-* Go to following file
-~~~shell
-$ nano /etc/network/interfaces (Not implemented)
-~~~
-
-* Add following lines:
-
-```
-iface eth0 inet static
-    address 192.168.137.100
-    netmask 255.255.255.0
-    network 192.168.137.0
-    gateway 192.168.137.1
-```
-```local.conf``` re Image Build)```.
-
-* Create a file named ```store-ssid.bbclass``` located in ```~/meta-custom/classes`` with following command:
-```shell
-gedit ~/meta-custom/classes/store-ssid.bbclass
-```
-
-* Add following lines into the file (Note that change the network address and corresponding arguments in the file with desired ones. Do not remove double quotes in ssid and psk):
-```bash
-#This function creates and appends the /etc/wpa_supplicant.conf file to the rootfs
-#
-store_ssid() {
-cat <<EOF >wpa_supplicant
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=0
-update_config=1
-
-network={
-    ssid="YOUR_NETWORK_NAME"
-    psk="YOUR_PASSWORD"
-    key_mgmt=WPA-PSK
-}
-EOF
-cat wpa_supplicant.conf > ${IMAGE_ROOTFS}/etc/wpa_supplicant.conf
-rm wpa_supplicant.conf
-}
-
-ROOTFS_POSTINSTALL_COMMAND += " store_ssid"
-```
-
-* Add meta-layer into the project if it does not included in previous procedure.
-
-* Then, add store-ssid support in ```local.conf```:
-```
-...
-USER_CLASSES_append = " store-ssid"
-...
-```
-
-## SETTING SSID FOR WLAN CONNECTION [SECOND WAY] (Before Image Build)
-
+## Setting SSID for WLAN Connection
 * Go to the following folder:
 ```shell
 cd ~/poky/meta/recipes-connectivity/wpa-supplicant/wpa-supplicant
@@ -434,21 +295,11 @@ network={
 
 [source: https://lynxbee.com/how-to-enable-wifi-with-yocto-raspberry-pi3/#.ZDa18Y5Bwaw]
 
-## SETTING SSID FOR WLAN CONNECTION (After Image Build)
-
-* Open a text editor to create a new file and following lines(Do not remove double quotes in ssid and psk):
-```bash (Not implemented)
-    ssid="YOUR_NETWORK_NAME"
-    psk="YOUR_PASSWORD"
-    key_mgmt=WPA-PSK
-}
-```
-
 * Create a confguration file that its name is exactly <strong> wpa_supplicant.conf </strong> (remove ```.txt``` if it gets added).
 
 ### Connecting to unsecured networks:
 * Change the content of the file with following lines:
-```
+```bash
 country=US # Your 2-digit country code
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev # Include this line for Stretch
 network={
@@ -456,59 +307,26 @@ network={
     key_mgmt=NONE
 }
 ```
-
 [source: https://howchoo.com/g/ndy1zte2yjn/how-to-set-up-wifi-on-your-raspberry-pi-without-ethernet]
 
-## IMAGE SANITY CHECKS FOR ROS (After Image Boot) (Not implemented)
-### ROS 1 Sanity Check:
-Run following commands in target terminal:
-```
-ping lge.com
-```
-Skip if built with "ros-implicit-workspace" in IMAGE_FEATURES.
-```
-source /opt/ros/melodic/setup.sh
-```
-Start roscore and check output.
-```
-roscore &
-```
-
-### ROS 2 Sanity Check:
-Run following commands in target terminal:
-```
-ping lge.com
-```
-Skip if built with "ros-implicit-workspace" in IMAGE_FEATURES.
-```
-source ros_setup.sh
-```
-```
-echo $LD_LIBRARY_PATH
-```
-```
-ros2 topic list
-```
-[source: https://github.com/ros/meta-ros/wiki/OpenEmbedded-Build-Instructions]
-
-## CHANGE THREAD COUNT FOR BUILD PROCESS
+## Change Thread Count for Build Process
 If you suffer from out of RAM or need to decrease build time, it is advised to modify thread count for bitbake build process. Add following lines to ```local.conf```  file, then choose appropriate values for "x" and "y".
 
-```
+```bash
 # Define thread count for build process
 PARALLEL_MAKE = "-j x"
 BB_NUMBER_THREADS = "y"
 ```
 [source: https://stackoverflow.com/questions/66488550/how-to-add-more-threads-when-building]
 
-## CLEAN BUILD
+## Clean Build
 * To erase ```temp``` directory, run follow command on the terminal:
-```
+```shell
 rm -rf build/tmp/
 ```
 
 * To remove the sstate cache directory, run follow command on the terminal
-```
+```shell
 rm -rf <YOCTO-PROJECT-PATH>/sstate-cache/
 ```
 [source: https://tutorialadda.com/yocto/how-to-do-clean-build-in-yocto-project]
