@@ -11,13 +11,13 @@ The following figure visualizes the branches of the project and their relationsh
 ![alt text](./screenshots/project_overview.png)
 
 ### Rover
-```Rover``` branch includes high-level logic drive control and algorithms like lane detection. The branch is written on Cpp, and it is targeted to run on a real-time Linux operating system. It schedules and executes all real-time processes and communicates with both the server program and board firmware, simultaneously.
+```Rover``` branch includes high-level logic drive control and algorithms like lane detection. The branch is written on C++, and it is targeted to run on a real-time Linux operating system. It schedules and executes all real-time processes and communicates with both the server program and board firmware, simultaneously.
 
 ### Server
 ```Server``` branch is a web interface that enables the user to control the vehicle. It uses Python-based Flask web framework. It mainly targets mobile devices so that it will be more intuitive to control the car. It also benefits from the device's orientation sensor and other onboard sensors to both control and monitor the vehicle. It eliminates the need of using any remote controller.
 
 ### Board
-```Board``` is an interface between RC car hardware (DC motors and lights) and Raspberry Pi. Over serial communication, it executes simple tasks like generating PWM signals for corresponding motor controls. It also transmits the status of the vehicle to the single-board computer. 
+```Board``` is an interface between RC car hardware (DC motors and lights) and Raspberry Pi. The project is runs on Raspberry Pico and the firmware is written in C++. Over serial communication, it executes simple tasks like generating PWM signals for corresponding motor controls. It also transmits the status of the vehicle to the single-board computer. 
 
 ## Prerequisites
 ### Hardware:
