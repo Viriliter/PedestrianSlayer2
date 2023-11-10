@@ -19,7 +19,7 @@ git clone -b dunfell git://git.openembedded.org/meta-openembedded
 source poky/oe-init-build-env
 ```
 ## Add Essential Layers
-Add following meta-layers inside ```~/build``` with following commands:
+Add following meta-layers inside ```<YOCTO-PROJECT-PATH>/build``` with following commands:
 
 ```shell
 bitbake-layers add-layer ../meta-openembedded/meta-oe
@@ -30,7 +30,7 @@ bitbake-layers add-layer ../meta-raspberrypi
 bitbake-layers show-layers
 ```
 ## Set Essential Build Configs
-* Make following modifications inside ```/build/conf/local.conf``` to customize image for Raspberry Pi 3:
+* Make following modifications inside ```<YOCTO-PROJECT-PATH>/build/conf/local.conf``` to customize image for Raspberry Pi 3:
 
 ```bash
 # target
@@ -138,7 +138,7 @@ Then, run following command on the terminal to build:
 bitbake core-image-base
 ```
 
-* The raw disk image is ```core-image-base-raspberrypi3-64.wic.bz2``` (If output name of image file is not manually altered) located in ```~/build/tmp/deploy/images/raspberrypi3-64/```.
+* The raw disk image is ```core-image-base-raspberrypi3-64.wic.bz2``` (If output name of image file is not manually altered) located in ```<YOCTO-PROJECT-PATH>/build/tmp/deploy/images/raspberrypi3-64/```.
 
 * Use BelanEtcher to flash the image to SD Card or eMMC
 
@@ -223,12 +223,12 @@ git clone https://github.com/hamzamac/meta-splash.git
 
 * After create an example meta-layer create a directory called ```classes``` with following command:
 ```shell
-mkdir -p ~/meta-custom/classes
+mkdir -p ../meta-custom/classes
 ```
 
 * Create a file named ```fixed-ip.bbclass``` located in ```~/meta-custom/classes`` with following command:
 ```shell
-gedit ~/meta-custom/classes/fixed-ip.bbclass
+gedit ../meta-custom/classes/fixed-ip.bbclass
 ```
 
 * Add following lines into the file (Note that change the network address and corresponding arguments in the file with desired ones):
@@ -269,7 +269,7 @@ USER_CLASSES_append = " fixed-ip"
 ## Setting SSID for WLAN Connection
 * Go to the following folder:
 ```shell
-cd ~/poky/meta/recipes-connectivity/wpa-supplicant/wpa-supplicant
+cd ../poky/meta/recipes-connectivity/wpa-supplicant/wpa-supplicant
 ```
 
 * To edit content of the file, run following command:
