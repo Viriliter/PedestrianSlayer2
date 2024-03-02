@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/mman.h>  // necessary for mlockall
 #include <mqueue.h>
+#include <bits/local_lim.h>  // It is neccessary to be seen PTHREAD_STACK_MIN macro by some compilers 
 
 #include <cstring>
 #include <stdexcept>

@@ -40,7 +40,9 @@ SlaveCommunicationTask::SlaveCommunicationTask(std::string task_name, SCHEDULE_P
         serialPort->SetBaudRate(baudrate);
     }
     else{
-        throw std::runtime_error("Cannot connect to port");
+        std::string exc_msg = "Cannot connect to port" + (std::string) portName;
+        SPDLOG_ERROR(exc_msg);
+        //throw std::runtime_error("Cannot connect to port");
     }
 };
 

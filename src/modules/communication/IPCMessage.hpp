@@ -72,7 +72,8 @@ namespace comm::ipc{
                 else if (const auto ptrValue(std::get_if<FLOAT>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 else if (const auto ptrValue(std::get_if<DOUBLE>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 //else if (const auto ptrValue(std::get_if<LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
-                else if (const auto ptrValue(std::get_if<LONG_LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                // Compilation error on GCC 9.5 so following line is commented out
+                //else if (const auto ptrValue(std::get_if<LONG_LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 else if (const auto ptrValue(std::get_if<std::vector<UINT8>>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 
                 // obj_[key] = package.second;
@@ -107,7 +108,8 @@ namespace comm::ipc{
                 else if (const auto ptrValue(std::get_if<FLOAT>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 else if (const auto ptrValue(std::get_if<DOUBLE>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 //else if (const auto ptrValue(std::get_if<LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
-                else if (const auto ptrValue(std::get_if<LONG_LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
+                // Compilation error on GCC 9.5 so following line is commented out
+                //else if (const auto ptrValue(std::get_if<LONG_LONG>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 else if (const auto ptrValue(std::get_if<std::vector<UINT8>>(&package.second)); ptrValue) obj_[key] = *ptrValue;
                 
                 // obj_[key] = package.second;

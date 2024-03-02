@@ -38,7 +38,7 @@ NavigationTask::NavigationTask(std::string task_name, SCHEDULE_POLICY policy, TA
 
     bool is_ubx_connected = ubx_driver.connect(UBX_PORT, baudrate);
     if (!is_ubx_connected){
-        throw std::runtime_error("Cannot connect to port");
+        //throw std::runtime_error("Cannot connect to port");
     }
 
 };
