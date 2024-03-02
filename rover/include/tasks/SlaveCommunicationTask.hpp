@@ -5,15 +5,14 @@
 #include <libserial/SerialPort.h>
 #include <libserial/SerialStream.h>
 
-#include "tasks/Task.hpp"
-
 #include "config.hpp"
+#include "tasks/Task.hpp"
 #include "modules/communication/Message.hpp"
 #include "modules/communication/IPCMessage.hpp"
-#include "utils/timing.h"
-#include "utils/container.h"
-#include "utils/types.h"
-#include "utils/miscs.h"
+#include "utils/Timing.hpp"
+#include "utils/Container.hpp"
+#include "utils/Types.hpp"
+#include "utils/Miscs.hpp"
 
 
 using namespace LibSerial;
@@ -31,7 +30,7 @@ namespace tasks{
             container::LinkedList<UINT8> rx_remaining;
 
         public:
-            SlaveCommunicationTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=0, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity={});
+            SlaveCommunicationTask(TaskConfig *taskConfig=NULL);
 
             bool connectPort();
             void disconnectPort();
@@ -41,9 +40,9 @@ namespace tasks{
             parseIncommingBytes(container::LinkedList<uint8_t> &rx_bytes, int byte_count);
         
         protected:
-            void beforeTask() override;  // overwrite
-            void runTask() override;  // overwrite
-            void afterTask() override;  // overwrite
+            virtual void beforeTask() noexcept override;  // overwrite
+            virtual void myTask() noexcept override;  // overwrite
+            virtual void afterTask() noexcept override;  // overwrite
             
     };
 }

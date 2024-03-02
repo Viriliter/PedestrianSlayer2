@@ -12,8 +12,8 @@
 #include <variant>
 //#include "simdjson.h"
 #include "nlohmann/json.hpp"
-#include "utils/container.h"
-#include "utils/types.h"
+#include "utils/Container.hpp"
+#include "utils/Types.hpp"
 
 namespace comm::serial{
     class SerialMessagePacket{

@@ -5,8 +5,8 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-#include "utils/math_fun.h"
-#include "utils/timing.h"
+#include "utils/MathFun.hpp"
+#include "utils/Timing.hpp"
 
 using namespace cv;
 

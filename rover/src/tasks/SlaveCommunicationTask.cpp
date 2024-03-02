@@ -3,8 +3,7 @@
 using namespace LibSerial;
 using namespace tasks;
 
-SlaveCommunicationTask::SlaveCommunicationTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns, int64_t runtime_ns, int64_t deadline_ns, std::vector<size_t> cpu_affinity)
-: Task(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
+SlaveCommunicationTask::SlaveCommunicationTask(TaskConfig *taskConfig): Task(taskConfig){
     switch (SLAVE_BAUD)
     {
     case (9600):
@@ -41,7 +40,7 @@ SlaveCommunicationTask::SlaveCommunicationTask(std::string task_name, SCHEDULE_P
     }
     else{
         std::string exc_msg = "Cannot connect to port" + (std::string) portName;
-        SPDLOG_ERROR(exc_msg);
+        //SPDLOG_ERROR(exc_msg);
         //throw std::runtime_error("Cannot connect to port");
     }
 };
@@ -56,7 +55,7 @@ bool SlaveCommunicationTask::connectPort()
     }
     catch (LibSerial::OpenFailed &ex){
         std::string exc_msg = "Cannot connect to port" + (std::string) ex.what();
-        SPDLOG_ERROR(exc_msg);
+        //SPDLOG_ERROR(exc_msg);
         return false;
     }
 };
@@ -134,11 +133,11 @@ SlaveCommunicationTask::parseIncommingBytes(container::LinkedList<UINT8> &rx_byt
     }
 };
 
-void SlaveCommunicationTask::beforeTask(){
-    SPDLOG_INFO("SlaveCommunicationTask has just started.");
+void SlaveCommunicationTask::beforeTask() noexcept{
+    //SPDLOG_INFO("SlaveCommunicationTask has just started.");
 };
 
-void SlaveCommunicationTask::runTask(){
+void SlaveCommunicationTask::myTask() noexcept{
     if (serialPort->IsOpen())
     {
         //Read received serial messages
@@ -208,8 +207,8 @@ void SlaveCommunicationTask::runTask(){
     }
 };
 
-void SlaveCommunicationTask::afterTask(){
-    SPDLOG_INFO("Task has been stopped.");
+void SlaveCommunicationTask::afterTask() noexcept{
+    //SPDLOG_INFO("Task has been stopped.");
 
     disconnectPort();
     delete serialPort;

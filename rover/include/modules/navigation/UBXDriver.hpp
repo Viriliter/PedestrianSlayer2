@@ -10,10 +10,10 @@
 #include <libserial/SerialStream.h>
 
 #include "config.hpp"
-#include "utils/timing.h"
-#include "utils/container.h"
-#include "utils/types.h"
-#include "utils/miscs.h"
+#include "utils/Timing.hpp"
+#include "utils/Container.hpp"
+#include "utils/Types.hpp"
+#include "utils/Miscs.hpp"
 
 using namespace LibSerial;
 

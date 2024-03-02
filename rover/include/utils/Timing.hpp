@@ -68,43 +68,59 @@ namespace timing{
     };
 
     inline int64_t NowNs() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000000000 + ts.tv_nsec;
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
     }
 
     inline int64_t WallNowNs() {
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    return ts.tv_sec * 1000000000 + ts.tv_nsec;
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
     }
 
     inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
-    ts.tv_nsec += ns;
+        ts.tv_nsec += ns;
 
-    while (ts.tv_nsec >= 1000000000) {
-        ++ts.tv_sec;
-        ts.tv_nsec -= 1000000000;
+        while (ts.tv_nsec >= 1'000'000'000) {
+            ++ts.tv_sec;
+            ts.tv_nsec -= 1'000'000'000;
+        }
+
+        while (ts.tv_nsec < 0) {
+            --ts.tv_sec;
+            ts.tv_nsec += 1'000'000'000;
+        }
+
+        return ts;
     }
 
-    while (ts.tv_nsec < 0) {
-        --ts.tv_sec;
-        ts.tv_nsec += 1000000000;
-    }
+    inline struct timespec SubtTimespecByNs(struct timespec ts, int64_t ns) {
+        ts.tv_nsec -= ns;
 
-    return ts;
+        while (ts.tv_nsec >= 1'000'000'000) {
+            ++ts.tv_sec;
+            ts.tv_nsec -= 1'000'000'000;
+        }
+
+        while (ts.tv_nsec < 0) {
+            --ts.tv_sec;
+            ts.tv_nsec += 1'000'000'000;
+        }
+
+        return ts;
     }
 
     inline static int64_t secondsToNanoseconds(int64_t seconds){
-        return seconds * 1000000000;
+        return seconds * 1'000'000'000;
     };
     
     inline static int64_t milisecondsToNanoseconds(int64_t miliseconds){
-        return miliseconds * 1000000;
+        return miliseconds * 1'000'000;
     };
 
     inline static int64_t microsecondsToNanoseconds(int64_t microseconds){
-        return microseconds * 1000;
+        return microseconds * 1'000;
     };
 }
 #endif  // TIMING_H

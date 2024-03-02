@@ -4,14 +4,13 @@
 #include <string>
 #include <sw/redis++/redis++.h>
 
-#include "tasks/Task.hpp"
-
 #include "config.hpp"
+#include "tasks/Task.hpp"
 #include "modules/communication/Message.hpp"
 #include "modules/communication/IPCMessage.hpp"
-#include "utils/container.h"
-#include "utils/types.h"
-#include "utils/miscs.h"
+#include "utils/Container.hpp"
+#include "utils/Types.hpp"
+#include "utils/Miscs.hpp"
 #include "modules/modes/Modes.hpp"
 
 
@@ -37,12 +36,12 @@ namespace tasks{
         Redis redis = Redis("tcp://127.0.0.1:6379");
 
     public:
-        ControllerTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns=0, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity={});
+        ControllerTask(TaskConfig *taskConfig=NULL);
             
     protected:
-        void beforeTask() override;  // overwrite
-        void runTask() override;  // overwrite
-        void afterTask() override;  // overwrite
+        virtual void beforeTask() noexcept override;  // overwrite
+        virtual void myTask() noexcept override;  // overwrite
+        virtual void afterTask() noexcept override;  // overwrite
     };
 }
 

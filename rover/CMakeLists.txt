@@ -34,11 +34,13 @@ add_executable(rover main.cpp
                 src/tasks/ControllerTask.cpp
                 src/tasks/NavigationTask.cpp
                 src/tasks/SlaveCommunicationTask.cpp
-                src/tasks/Task.cpp
-                src/tasks/TaskScheduler.cpp
                 src/tasks/UserControlTask.cpp
-                src/utils/threading/latency_tracker.cpp
-                src/utils/math_fun.cpp)
+                src/tasks/Task.cpp
+                src/tasks/LatencyTracker.cpp
+                src/tasks/PosixMutex.cpp
+                src/tasks/Schedulers.cpp
+                src/tasks/TaskScheduler.cpp
+                src/utils/MathFun.cpp)
 
 # Add external libs
 include_directories(${CMAKE_SOURCE_DIR}/libs)

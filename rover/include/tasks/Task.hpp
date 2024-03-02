@@ -1,5 +1,5 @@
-#ifndef TASK_HPP
-#define TASK_HPP
+#ifndef TASK_H
+#define TASK_H
 
 #include <pthread.h>
 #include <sys/mman.h>  // necessary for mlockall
@@ -11,177 +11,124 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string>
-#include <iostream>
 #include <vector>
+#include <iostream>
 
 #include <cstddef>
 #include <cstdint>
-#include <map>
 #include <memory>
-#include <cerrno>
+#include <atomic>
 #include <ctime>
 
-#include "schedulers.hpp"
-#include "utils/threading/latency_tracker.h"
-#include "utils/timing.h"
+//#include "LogManager/Logging.hpp"
+
 #include "config.hpp"
-#include "utils/types.h"
+#include "utils/Timing.hpp"
+#include "tasks/LatencyTracker.hpp"
+#include "tasks/Schedulers.hpp"
+
+namespace tasks {
 
 const unsigned int MAX_RECURSION_LIMIT = 100;
 
-namespace tasks{
-    enum SCHEDULE_POLICY{
-        DEADLINE,
-        FIFO,
-        OTHER,
-    };
+/**
+ * @brief This enum contains task priorties.
+*/
+enum class TASK_PRIORITY{
+    RT_HIGH_PRIORITY,
+    RT_NORMAL_PRIORITY,
+    RT_LOW_PRIORITY,
+    HIGH_PRIORITY,
+    NORMAL_PRIORITY,
+    LOW_PRIORITY,
+};
 
-    enum TASK_PRIORITY{
-        RT_VERY_HIGH_PRIORITY = 88,
-        RT_HIGH_PRIORITY = 80,
-        RT_NORMAL_PRIORITY = 60,
-        RT_LOW_PRIORITY = 10,
-        HIGH_PRIORITY = 0,
-        NORMAL_PRIORITY = 10,
-        LOW_PRIORITY = 20,
-    };
+/**
+ * @brief This enum contains statuses of task.
+*/
+enum class TASK_STATUS{
+    IDLE_TASK,
+    RUNNING_TASK,
+    STOPPED_TASK,
+};
 
-    enum TASK_STATUS{
-        IDLE_TASK,  // The task has not been run before 
-        RUNNING_TASK,  // The task is running
-        STOPPED_TASK,  // The task has been run at least once before but it is not running now.
-    };
+/**
+ * @brief This enum contains schedule policies.
+*/
+enum class SCHEDULE_POLICY{
+    DEADLINE,
+    FIFO,
+    OTHER,
+    RR
+};
 
-    /*
-    struct mq_attr{
-        long mq_flags;  // Flags: 0 or O_NONBLOCK
-        long mq_maxmsg;  // Max # of messages on queue
-        long mq_msgsize;  // Max message size (bytes)
-        long mq_curmsgs;  // # of messages currently in queue
-    };
-    */
+constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB for stack size
 
-    constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
-    static size_t task_id_;
+struct TaskConfig{
+    SCHEDULE_POLICY schedulePolicy = SCHEDULE_POLICY::OTHER;  ///> Schedule Policy (SCHEDULE_POLICY::OTHER is non-rt scheduler)
+    
+    uint64_t taskPeriodUs = 0;  ///> Execution period between tasks in microseconds
+    uint64_t taskDeadlineUs = 0;  ///> Deadline period for task in microseconds (Applicable for SCHEDULE_POLICY::DEADLINE)
+    uint64_t taskRuntimeUs = 0;  ///> Runtime period for task in microseconds (Applicable for SCHEDULE_POLICY::DEADLINE)
+    int32_t nice = 19;  ///> Nice value of process (Applicable only for SCHEDULE_POLICY::OTHER) [-20 (highest prio), 19(lowest prio)]
+    uint32_t priority = 1;  ///> Priority of process (Applicable for SCHEDULE_POLICY::FIFO, SCHEDULE_POLICY::RR, and SCHEDULE_POLICY::DEADLINE) [1 (lowest prio), 99(highest prio)]
 
-    // Base Task is a template for different type of tasks (Task, CyclicTask e.g.)
-    class BaseTask {
-        //std::atomic_bool stop_requested_ = false;
-        std::atomic<bool> stop_requested_ = {false};
-        size_t taskID_ = 0;
-        std::string task_name_ = "";
-        SCHEDULE_POLICY policy_;
-        TASK_STATUS taskStatus_ = TASK_STATUS::IDLE_TASK;  // Define task status as idle at first
+    std::vector<size_t> cpuAffinity = {};  // List of the cpu cores that will be used for the task
+
+    bool enableWakeupLatencyTracer = true;  // Traces wakeup latency  (Applicable for CyclicTask)
+    bool enableLoopTracer = true;  // Traces loop latency (Applicable for CyclicTask)
+    bool enableTraceOverrun = true;  // Traces if total latency exceeds the task period (Applicable for CyclicTask)
+};
+
+/**
+ * @class AbstractTask
+ * 
+ * @brief This abstract class provides the base functionality for POSIX threadding.
+ * 
+ * It is the base class for Task and CyclicTask, and contains all common functionalities of these two classes.
+*/
+class AbstractTask{
+    private:
+        static size_t sTaskID;
+        size_t mTaskID = 0;
+        TASK_STATUS mTaskStatus = TASK_STATUS::IDLE_TASK;
+        std::atomic<bool> mStopRequested{false};
         static unsigned int CurrentRecursionDepth;
 
+        pthread_t mTask;
+       
+        /**
+         * @brief This static function is for pthread application.
+         * 
+         * @param[in] data A pointer of AbstractTask instance 
+        */
+        static void* run(void* data) noexcept;
+
     protected:
-        std::vector<size_t> cpu_affinity_;
-        size_t stack_size_ = (static_cast<size_t>(PTHREAD_STACK_MIN) + kDefaultStackSize);
-        TASK_PRIORITY task_priority_;
-        int64_t period_ns_ = 0;
-        int64_t runtime_ns_ = 0;
-        int64_t deadline_ns_ = 0;
-        std::vector<size_t> cpu_affinity = {};
-
-        void taskStatus(TASK_STATUS taskStatus) {taskStatus_ = taskStatus;}; // Setter
-
-    public:
-        TASK_STATUS taskStatus() const {return taskStatus_;};
-        size_t taskID() {return taskID_;};
+        TASK_PRIORITY mTaskPriority = TASK_PRIORITY::NORMAL_PRIORITY;
+        SCHEDULE_POLICY mSchedulePolicy = SCHEDULE_POLICY::OTHER;
+        size_t mStackSize = (static_cast<size_t>(PTHREAD_STACK_MIN) + kDefaultStackSize);
+        std::vector<size_t> mCpuAffinity = {};
         mqd_t mq_port_in;
         mqd_t mq_port_out;
-        virtual void start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) = 0;
-        virtual int join() = 0;
+        
+        std::shared_ptr<Scheduler> mScheduler;
+        TaskConfig mConfig;
 
-        virtual void RequestStop() noexcept {
-            stop_requested_ = true;
-        }
-
-        // The constructors and destructors are needed because we need to delete
-        // objects of type BaseTask polymorphically.
-        BaseTask(std::string &task_name, SCHEDULE_POLICY &policy, TASK_PRIORITY &task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
-        : task_name_(task_name), policy_(policy), task_priority_(task_priority), period_ns_(period_ns), runtime_ns_(runtime_ns), deadline_ns_(deadline_ns), cpu_affinity_(cpu_affinity){
-            //taskID_ = task_id_;
-            //task_id_++;
-
-            sched_attr attr = {};
-            attr.size = sizeof(attr);
-            attr.sched_flags = 0;
-            switch(policy){
-                case(SCHEDULE_POLICY::DEADLINE):
-                    attr.sched_nice = 0;
-                    attr.sched_priority = task_priority;
-
-                    attr.sched_policy = SCHED_DEADLINE;  // Set the scheduler policy
-                    attr.sched_runtime = runtime_ns;
-                    attr.sched_deadline = deadline_ns;
-                    attr.sched_period = period_ns;
-
-                    break;
-                case(SCHEDULE_POLICY::FIFO):
-                    attr.sched_nice = 0;
-                    attr.sched_priority = task_priority;  // Set the scheduler priority
-                    
-                    attr.sched_policy = SCHED_FIFO;         // Set the scheduler policy
-                    break;
-                case(SCHEDULE_POLICY::OTHER): 
-                    // Self scheduling attributes
-                    attr.sched_nice = task_priority;    // Set the thread niceness
-                    
-                    attr.sched_policy = SCHED_OTHER;  // Set the scheduler policy
-                    break;
-                default:
-                    break;
-            };
-
-            auto ret = sched_setattr(0, &attr, 0);
-            if (ret < 0) {
-                SPDLOG_ERROR("unable to sched_setattr: {}", std::strerror(errno));
-                throw std::runtime_error{"failed to sched_setattr"};
-            }          
-        };
-        virtual ~BaseTask() = default;
-
-        // Copy constructors are not allowed
-        BaseTask(const BaseTask&) = delete;
-        BaseTask& operator=(const BaseTask&) = delete;
-
-        // Should the thread be moveable? std::thread is moveable
-        // TODO: investigate moving the stop_requested_ flag somewhere else
-        // Move constructors are not allowed because of the atomic_bool
-        BaseTask(BaseTask&&) noexcept = delete;
-        BaseTask& operator=(BaseTask&&) noexcept = delete;
+        int64_t mPeriodNs = 1'000'000'000;  // 1s
+        struct timespec mNextWakeupTime;
 
         /**
-         * @brief Check if stop has been requested
-         *
-         * @return true if stop is requested
-         */
-        bool StopRequested() const noexcept {
-            // Memory order relaxed is OK, because we don't really care when the signal
-            // arrives, we just care that it is arrived at some point.
-            //
-            // Also this could be used in a tight loop so we don't want to waste time when we don't need to.
-            //
-            // https://stackoverflow.com/questions/70581645/why-set-the-stop-flag-using-memory-order-seq-cst-if-you-check-it-with-memory
-            // TODO: possibly use std::stop_source and std::stop_token (C++20)
-            return stop_requested_.load(std::memory_order_relaxed);
-        };
+         * @brief This function halts the execution.
+         * @param[in] nextWakeupTime Timespec when execution continue  
+        */
+        inline void sleep(const struct timespec &nextWakeupTime) noexcept;
 
-        inline double Sleep(const struct timespec& next_wakeup_time) noexcept {
-            // TODO: check for errors?
-            // TODO: can there be remainders?
-            switch(policy_){
-                case(SCHEDULE_POLICY::DEADLINE):
-                    // Ignoring error as man page says "In the Linux implementation, sched_yield() always succeeds."
-                    sched_yield();
-                    return 0.0;               
-                default:
-                    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);
-                    return 0.0;
-            };
-        };
-    
+        /**
+         * @brief This function request stop for the task.
+        */
+        void requestStop() noexcept;
+
         bool createMsgQueue(const char *msgQueueName, mq_attr _attr_in, mq_attr _attr_out){
             size_t lenQueueName = strlen(msgQueueName);
             char *msgQueueNameIn = new char[lenQueueName+4];
@@ -261,34 +208,7 @@ namespace tasks{
 
             return queueSize;
         };
-        /*
-        bool writeMsgQueue(const char *msgQueueName, char *queue, uint64_t queueSize){
-            mqd_t mqd_t = mq_open(msgQueueName, O_WRONLY|O_NONBLOCK);
-            // TODO send message to the queue according to task priority              
-            if (queueSize > MAX_MQ_MSG_SIZE) throw "queueSize exceeds MAX_MQ_MSG_SIZE. Try to increase MAX_MQ_MSG_SIZE inside configuration file";
 
-            char *buf = new char[MAX_MQ_MSG_SIZE];
-            // First two bytes defines the size of the queue
-            buf[0] = queueSize & 0x00FF;
-            buf[1] = (queueSize & 0xFF00) >> 8;
-
-            for (size_t i=0; i< queueSize; i++){
-                buf[i+2] = queue[i];
-            }
-
-            int ret_rec = mq_send(mqd_t, buf, MAX_MQ_MSG_SIZE, 0);
-            if (ret_rec==-1){
-                int errvalue = errno;
-                std::string nn;
-                for(int i=0; i<strlen(msgQueueName); i++) nn += msgQueueName[i]; 
-                std::cout << "The error generated was " << std::to_string(errvalue) << " in writeMsgQueue0" << nn << std::endl;
-                std::cout << "That means: " << strerror( errvalue ) << std::endl;
-            }
-            delete[] buf;
-
-            return (bool) (ret_rec==0);
-        };
-        */
         template<typename T>
         bool writeMsgQueue(const char *msgQueueName, std::vector<T> &queue, uint64_t queueSize){
             CurrentRecursionDepth++;
@@ -364,302 +284,146 @@ namespace tasks{
             else
                 return mq_attr_.mq_curmsgs;
         }
-    };
-
-    /*
-    * Simple real-time compilent task class. Task runs in defined period with proper task settings.
-    * However, its timing is not as accurate as CyclicTask. 
-    * @param cpu_affinity - mask for cpu cores so that task runs in specified cores
-    * @param period_ns - period of task in nanoseconds
-    */
-    class Task : public BaseTask {
-    private:
-        pthread_t task_;
-
-        struct timespec next_wakeup_time_;
     
-        /**
-         * A wrapper function that is passed to pthread. This starts the task and
-         * performs any necessary setup.
-         */
-        static void* RunTask(void* data) {
-            Task* task = static_cast<Task*>(data);
-            //SetThreadScheduling(task->scheduler_config_);  // TODO: return error instead of throwing
-            task->run();
-            return nullptr;
-        };
-
     public:
-        Task(std::string &task_name, SCHEDULE_POLICY &policy, TASK_PRIORITY &task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
-        : BaseTask(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
-        };
-        ~Task(){
-            std::cout << "task deconstructor called" << std::endl;
-        };
+        /**
+         * @brief Constructor of abstract class
+        */
+        AbstractTask(TaskConfig *config=NULL);
+
+        // Destructor is not allowed for abstract class
+        virtual ~AbstractTask() = 0;
+
+        // Copy constructors are not allowed
+        AbstractTask(const AbstractTask&) = delete;
+        AbstractTask& operator=(const AbstractTask&) = delete;
+        
+        // Move constructors are not allowed because of the atomic_bool
+        AbstractTask(AbstractTask&&) noexcept = delete;
+        AbstractTask& operator=(AbstractTask&&) noexcept = delete;
+
+        /**
+         * @brief This function returns task ID.
+         * @return taskID
+        */
+        size_t taskID();
+
+        /**
+         * @brief This function initialize thread attributes and starts a new thread.
+        */
+        void start();
         
         /**
-         * Starts the task in the background.
-         *
-         * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
-         * @param start_wall_time_ns should be the start time in nanoseconds for the realtime clock.
-         */
-        void start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) override {
-            pthread_attr_t attr;
-
-            // Initialize the pthread attribute
-            int ret = pthread_attr_init(&attr);
-            if (ret != 0) {
-            throw std::runtime_error(std::string("error in pthread_attr_init: ") + std::strerror(ret));
-            }
-
-            // Set a stack size
-            //
-            // Note the stack is prefaulted if mlockall(MCL_FUTURE | MCL_CURRENT) is
-            // called, which under this app framework should be.
-            //
-            // Not even sure if there is an optimizer-safe way to prefault the stack
-            // anyway, as the compiler optimizer may realize that buffer is never used
-            // and thus will simply optimize it out.
-            ret = pthread_attr_setstacksize(&attr, stack_size_);
-            if (ret != 0) {
-            throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
-            }
-
-            // Setting CPU mask
-            if (!cpu_affinity_.empty()) {
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            for (auto cpu : cpu_affinity_) {
-                CPU_SET(cpu, &cpuset);
-            }
-
-            ret = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
-            if (ret != 0) {
-                throw std::runtime_error(std::string("error in pthread_attr_setaffinity_np: ") + std::strerror(ret));
-            }
-            }
-
-            ret = pthread_create(&task_, &attr, &Task::RunTask, this);
-            if (ret != 0) {
-            throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
-            }
-        };
+         * @brief This function joins the thread.
+         * @return Exit Status
+        */
+        virtual int join() noexcept;
 
         /**
-         * Joins the thread.
-         *
-         * @returns the return value of pthread_join
-         */
-        int join() override {
-            return pthread_join(task_, nullptr);
-        };
+         * @brief This function checks stop is requested.
+         * @return Returns true stop is requested.  
+        */
+        inline bool isStopRequested() const noexcept;
 
-    protected:
-        void terminateTask(){
-            this->RequestStop();
-        }
-       
-        virtual void beforeTask(){};
+        /**
+         * @brief This function sets Task Status.
+         * @param[in] taskStatus Task status to be set
+        */
+        void setTaskStatus(TASK_STATUS taskStatus) noexcept;
 
-        virtual void afterTask(){};
+        /**
+         * @brief This function returns status of task.
+         * @return Status of task
+        */
+        TASK_STATUS TaskStatus() noexcept;
 
-        virtual void runTask(){};
+        /**
+         * @brief This function terminates the ongoing task.
+        */
+        virtual void terminateTask() noexcept;
+        
+        /**
+         * @brief This pure virtual function executes task functions.
+        */
+        virtual void runTask() noexcept = 0;
 
-        virtual void run() noexcept final{
-            taskStatus(TASK_STATUS::RUNNING_TASK);
+        /**
+         * @brief This pure virtual function runs before the actual task is performed.
+        */
+        virtual void beforeTask() noexcept = 0;
 
-            clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
+        /**
+         * @brief This pure virtual function is where actual task is performed.
+        */
+        virtual void myTask() noexcept = 0;
 
-            beforeTask();
-            
-            auto last_data_write_time = timing::NowNs();
+        /**
+         * @brief This pure virtual function runs after the actual task is performed.
+        */
+        virtual void afterTask() noexcept = 0;
 
-            while(true){
-                if (this->StopRequested()) {
-                    break;
-                }
+};
 
-                auto now = timing::NowNs();
-
-                this->runTask();
-           
-                next_wakeup_time_ = timing::AddTimespecByNs(next_wakeup_time_, period_ns_);
-                clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time_, nullptr);
-                
-                std::this_thread::sleep_for(std::chrono::nanoseconds(period_ns_));
-            }
-
-            afterTask();
-            SPDLOG_INFO("Aborted");
-
-           taskStatus(TASK_STATUS::STOPPED_TASK);
-        };
-
-    };
-
-    /*
-    * Real-time compilent task class. CyclicTask runs in defined period with higher resolution by estimating the elapsed time to call the task.
-    * @param cpu_affinity - mask for cpu cores so that task runs in specified cores
-    * @param period_ns - period of task in nanoseconds
-    */
-    class CyclicTask: public BaseTask{
+/**
+ * @class Task
+ * 
+ * @brief This class provides basic POSIX thread functionalities.
+ * 
+ * This class inherits from AbstactTask class. This class performs better than 
+ * CyclicTask in terms of speed. However, resolution of time interval between tasks is lower.
+*/
+class Task : public AbstractTask{
     private:
-        schedulers::Config scheduler_config_;
-        pthread_t task_;
-        bool rt_enabled = false;
-
-        int64_t start_monotonic_time_ns_ = 0;
-        int64_t start_wall_time_ns_ = 0;
-        struct timespec next_wakeup_time_;
-
-        // Debug information
-        threading::LatencyTracker wakeup_latency_tracker_;
-        threading::LatencyTracker loop_latency_tracker_;
-        threading::LatencyTracker busy_wait_latency_tracker_;
-
-        static void* RunTask(void* data) {
-            CyclicTask* task = static_cast<CyclicTask*>(data);
-            //SchedulerT::SetThreadScheduling(task->scheduler_config_);  // TODO: return error instead of throwing
-            task->run();
-            return nullptr;
-        }
-
-        virtual void traceLoopStart(double /* wakeup_latency_us */) noexcept {};
-
-        virtual void traceLoopEnd(double /* loop_latency_us */) noexcept {};
+        virtual void runTask() noexcept final;
 
     public:
-        CyclicTask(std::string &task_name, SCHEDULE_POLICY &policy, TASK_PRIORITY &task_priority, int64_t period_ns=1000000000, int64_t runtime_ns=0, int64_t deadline_ns=0, std::vector<size_t> cpu_affinity = {})
-        : BaseTask(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
-        };
+        Task(TaskConfig *config=NULL);
 
-        int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; };
-        int64_t StartWallTimeNs() const { return start_wall_time_ns_; };
+        ~Task();
+
+        virtual void beforeTask() noexcept;
         
-        /**
-         * Track the latency wakeup and loop latency. The default behavior is to track them in histograms that updates online.
-         * @param wakeup_latency the latency of wakeup (scheduling latency) in us.
-         * @param loop_latency the latency of Loop() call in us.
-         */
-        virtual void trackLatency(double /*wakeup_latency*/, double /*loop_latency*/) noexcept {};
+        virtual void myTask() noexcept;
 
-        /**
-         * Starts the task in the background.
-         *
-         * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
-         * @param start_wall_time_ns should be the start time in nanoseconds for the realtime clock.
-         */
-        void start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) override {
-            pthread_attr_t attr;
+        virtual void afterTask() noexcept;
+};
 
-            // Initialize the pthread attribute
-            int ret = pthread_attr_init(&attr);
-            if (ret != 0) {
-            throw std::runtime_error(std::string("error in pthread_attr_init: ") + std::strerror(ret));
-            }
+/**
+ * @class CyclicTask
+ * 
+ * @brief This class provides POSIX thread functionalities with tracker mechanism.
+ * 
+ * This class inherits from AbstactTask class. This class performs more determisnistic than 
+ * Task class thanks to its own time tracking mechanism. However, it introduces extra overheads 
+ * which may perform worse than Task. Overall, overheads can be neglegible and they will not 
+ * differ much in most of the applications.
+*/
+class CyclicTask : public AbstractTask{
+    private:
+        bool enableWakeupLatencyTracer = false;
+        bool enableLoopTracer = true;
+        bool enableTraceOverrun = true;
 
-            // Set a stack size
-            //
-            // Note the stack is prefaulted if mlockall(MCL_FUTURE | MCL_CURRENT) is
-            // called, which under this app framework should be.
-            //
-            // Not even sure if there is an optimizer-safe way to prefault the stack
-            // anyway, as the compiler optimizer may realize that buffer is never used
-            // and thus will simply optimize it out.
-            ret = pthread_attr_setstacksize(&attr, stack_size_);
-            if (ret != 0) {
-            throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
-            }
+        LatencyTracker mWakeupLatencyTracker;
+        LatencyTracker mLoopLatencyTracker;
+        LatencyTracker mBusyWaitLatencyTracker;
 
-            // Setting CPU mask
-            if (!cpu_affinity_.empty()) {
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            for (auto cpu : cpu_affinity_) {
-                CPU_SET(cpu, &cpuset);
-            }
+        virtual void runTask() noexcept final;
 
-            ret = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
-            if (ret != 0) {
-                throw std::runtime_error(std::string("error in pthread_attr_setaffinity_np: ") + std::strerror(ret));
-            }
-            }
+    public:
+        CyclicTask(TaskConfig *config=NULL);
+     
+        ~CyclicTask();
 
-            ret = pthread_create(&task_, &attr, &CyclicTask::RunTask, this);
-            if (ret != 0) {
-            throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
-            }
-        };
+        virtual void beforeTask() noexcept;
+        
+        virtual void myTask() noexcept;
 
-        /**
-         * Joins the thread.
-         *
-         * @returns the return value of pthread_join
-         */
-        int join() override {
-            return pthread_join(task_, nullptr);
-        };
+        virtual void afterTask() noexcept;
 
-    protected:
-        void terminateTask(){
-            this->RequestStop();
-        };
-
-        virtual void beforeTask(){};
-
-        virtual void afterTask(){
-            SPDLOG_DEBUG("wakeup_latency:");
-            wakeup_latency_tracker_.DumpToLogger();
-
-            SPDLOG_DEBUG("loop_latency:");
-            loop_latency_tracker_.DumpToLogger();
-
-            SPDLOG_DEBUG("busy_wait_latency:");
-            busy_wait_latency_tracker_.DumpToLogger();
-        };
-
-        virtual bool runTask(int64_t ellapsed_ns) noexcept { return true;};
-
-        virtual void run() noexcept final {
-            taskStatus(TASK_STATUS::RUNNING_TASK);
-            clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
-            int64_t loop_start, loop_end, should_have_woken_up_at;
-
-            int64_t wakeup_latency, loop_latency, busy_wait_latency;
-
-            while (!this->StopRequested()) {
-                should_have_woken_up_at = next_wakeup_time_.tv_sec * 1000000000 + next_wakeup_time_.tv_nsec;
-                loop_start = timing::NowNs();
-
-                wakeup_latency = loop_start - should_have_woken_up_at;
-
-                traceLoopStart(wakeup_latency);
-
-                if (runTask(loop_start - StartMonotonicTimeNs())) {
-                    break;
-                }
-
-                loop_end = timing::NowNs();
-                loop_latency = static_cast<double>(loop_end - loop_start);
-
-                traceLoopEnd(loop_latency);
-
-                trackLatency(wakeup_latency, loop_latency);
-
-                wakeup_latency_tracker_.RecordValue(wakeup_latency);
-                loop_latency_tracker_.RecordValue(loop_latency);
-
-                next_wakeup_time_ = timing::AddTimespecByNs(next_wakeup_time_, period_ns_);
-                busy_wait_latency = Sleep(next_wakeup_time_);
-
-                busy_wait_latency_tracker_.RecordValue(busy_wait_latency);
-            }
-            taskStatus(TASK_STATUS::STOPPED_TASK);
-        };
-
-    };
+};
 
 }
 
 
-#endif  //TASK_HPP
+#endif  // TASK_H

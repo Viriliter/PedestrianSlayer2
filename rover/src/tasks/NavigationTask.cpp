@@ -3,8 +3,7 @@
 using namespace LibSerial;
 using namespace tasks;
 
-NavigationTask::NavigationTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns, int64_t runtime_ns, int64_t deadline_ns, std::vector<size_t> cpu_affinity)
-: Task(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
+NavigationTask::NavigationTask(TaskConfig *taskConfig): Task(taskConfig){
 
     mq_attr msg_attr;
 
@@ -44,11 +43,11 @@ NavigationTask::NavigationTask(std::string task_name, SCHEDULE_POLICY policy, TA
 };
 
 
-void NavigationTask::beforeTask(){
+void NavigationTask::beforeTask() noexcept{
     SPDLOG_INFO("NavigationTask has just started.");
 };
 
-void NavigationTask::runTask(){
+void NavigationTask::myTask() noexcept{
     if (ubx_driver.IsOpen())
     {
         UBX ubx;
@@ -67,7 +66,7 @@ void NavigationTask::runTask(){
     }
 };
 
-void NavigationTask::afterTask(){
+void NavigationTask::afterTask() noexcept{
     SPDLOG_INFO("Task has been stopped.");
 
     ubx_driver.disconnect();

@@ -12,9 +12,9 @@
 #include <variant>
 //#include "simdjson.h"
 #include "nlohmann/json.hpp"
-#include "utils/container.h"
-#include "utils/timing.h"
-#include "utils/types.h"
+#include "utils/Container.hpp"
+#include "utils/Timing.hpp"
+#include "utils/Types.hpp"
 
 namespace comm::ipc{
 

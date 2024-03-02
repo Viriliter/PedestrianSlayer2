@@ -2,8 +2,7 @@
 
 using namespace tasks;
 
-ControllerTask::ControllerTask(std::string task_name, SCHEDULE_POLICY policy, TASK_PRIORITY task_priority, int64_t period_ns, int64_t runtime_ns, int64_t deadline_ns, std::vector<size_t> cpu_affinity)
-: Task(task_name, policy, task_priority, period_ns, runtime_ns, deadline_ns, cpu_affinity){
+ControllerTask::ControllerTask(TaskConfig *taskConfig): Task(taskConfig){
     mq_attr msg_attr;
 
     msg_attr.mq_flags = 0;
@@ -18,13 +17,13 @@ ControllerTask::ControllerTask(std::string task_name, SCHEDULE_POLICY policy, TA
     createMsgQueue("/ControllerTask", msg_attr, msg_attr);
 };
 
-void ControllerTask::beforeTask(){
+void ControllerTask::beforeTask() noexcept{
     std::cout << REDIS_URI << std::endl;
     std::cout << redis.ping() << std::endl;
     //redis.set("key", "val");
 };
 
-void ControllerTask::runTask(){
+void ControllerTask::myTask() noexcept{
     // Get user inputs over redis
     auto inMode = redis.get("mode");
     auto inThrust = redis.get("thrust");
@@ -113,8 +112,8 @@ void ControllerTask::runTask(){
     writeMsgQueue("/SlaveCommunicationTask_in", serializedMsg, serializedMsg.size());
 };
 
-void ControllerTask::afterTask(){
-    SPDLOG_INFO("Task has been stopped.");
+void ControllerTask::afterTask() noexcept{
+    //SPDLOG_INFO("Task has been stopped.");
 
     closeMsgQueue();
     unlinkMsgQueue("/ControllerTask");

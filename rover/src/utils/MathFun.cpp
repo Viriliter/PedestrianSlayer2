@@ -1,4 +1,5 @@
-#include "utils/math_fun.h"
+#include "utils/MathFun.hpp"
+
 
 std::vector<float> math_fun::polyfit(const std::vector<float> X, const std::vector<float> Y, int deg)
 {

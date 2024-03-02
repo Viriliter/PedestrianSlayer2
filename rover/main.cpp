@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <signal.h>
+#include <memory>
 
 #include <opencv2/opencv.hpp> 
 #include "spdlog/spdlog.h"
@@ -29,7 +30,7 @@ int main(){
     SPDLOG_INFO("Starting application...");
 
     //spdlog::info("Welcome to spdlog version {}.{}.{}  !", SPDLOG_VER_MAJOR, SPDLOG_VER_MINOR, SPDLOG_VER_PATCH);
-    scheduler->startScheduler();
+    scheduler->startTasks();
 
     /*
     LaneDetector ld = LaneDetector(true);

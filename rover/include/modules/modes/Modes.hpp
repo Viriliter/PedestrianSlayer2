@@ -3,8 +3,8 @@
 
 #include "config.hpp"
 #include "modules/communication/Message.hpp"
-#include "utils/container.h"
-#include "utils/types.h"
+#include "utils/Container.hpp"
+#include "utils/Types.hpp"
 
 namespace modes{
     // Base class
