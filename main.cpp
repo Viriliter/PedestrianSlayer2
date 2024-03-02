@@ -8,6 +8,7 @@
 #include "configuration.h"
 #include "boards.h"
 #include "./include/UARTDriver.h"
+#include "./include/SPIDriver.h"
 
 static uint thrust_slice_num;
 static uint steering_slice_num;
@@ -93,19 +94,33 @@ int main(){
     pwm_set_wrap(steering_slice_num, PWM_THRUST_WRAP);
 
     // Serial
-    HAL::UARTDriver driver(MASTER_UART_ID, HAL::BaudrateEnum::B115200);
+    #ifndef ENABLE_MASTER_SPI_COMM
+        HAL::uartConfig config;
+        config.id = (uart_inst_t *) MASTER_UART_ID;
+        config.baudrate = MASTER_UART_BAUD_RATE;
+        config.tx_pin = MASTER_UART_TX_PIN;
+        config.rx_pin = MASTER_UART_RX_PIN;
 
-    // Set the TX and RX pins by using the function select on the GPIO
-    // Set datasheet for more information on function select
-    gpio_set_function(MASTER_UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(MASTER_UART_RX_PIN, GPIO_FUNC_UART);
+        HAL::UARTDriver masterComm(config);
+    #else
+        HAL::spiConfig config;
+        config.id = (spi_inst_t *) MASTER_SPI_ID;
+        config.baudrate = MASTER_SPI_BAUD_RATE;
+        config.miso_pin = MASTER_SPI_MISO_PIN;
+        config.cs_pin = MASTER_SPI_CS_PIN;
+        config.sck_pin = MASTER_SPI_SCK_PIN;
+        config.mosi_pin = MASTER_SPI_MOSI_PIN;
+
+        HAL::SPIDriver masterComm(config);
+    #endif
+
     on_motor_pwm(127);
     on_steering_pwm(127);
 
     while(true){
-        if(driver.isAvailable()){
+        if(masterComm.isAvailable()){
             char *rx_buf = new char[7];
-            driver.read(rx_buf, 7);
+            masterComm.read(rx_buf, 7);
             UINT8 roverControl = rx_buf[3];
             UINT8 steeringAngle = rx_buf[4];
             UINT8 thrustDutyCycle = rx_buf[5];
@@ -128,11 +143,11 @@ int main(){
             tx_buf[3] = roverControl;
             tx_buf[4] = msgCounter;
             tx_buf[5] = (tx_buf[0]+tx_buf[1]+tx_buf[2]+tx_buf[3]+tx_buf[4])%255;
-            driver.write(tx_buf, 6);
+            masterComm.write(tx_buf, 6);
 
             delete[] tx_buf;
             delete[] rx_buf;
-            
+            gpio_put(PIN_RIGHT_LIGHT, 1);
         }
     }
 

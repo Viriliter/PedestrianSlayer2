@@ -5,11 +5,9 @@
 #define BOARD_TYPE PICO
 
 // COMMUNICATION CONFIGS
-#define MASTER_UART_ID uart1
-#define MASTER_UART_BAUD_RATE 115200
-
-#define MASTER_UART_TX_PIN 4
-#define MASTER_UART_RX_PIN 5
+// Enables SPI interface for master communication.
+// Comment following line to enable UART interface.
+//#define ENABLE_MASTER_SPI_COMM
 
 // CONTROL CONFIGS
 #define TIME_STEP 10
